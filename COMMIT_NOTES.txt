@@ -1,0 +1,8 @@
+If pushing manually, run these commands from this folder:
+
+git init
+git add .
+git commit -m "beta 0.0.3 branded UI redesign"
+
+Suggested repository name:
+envys-text-animator
