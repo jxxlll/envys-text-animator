@@ -1,12 +1,12 @@
 Envy's Text Animator - Development Changelog
-Current checkpoint: beta 0.0.2a
-Last updated: 2026-06-01
+Current checkpoint: beta 0.0.3
+Last updated: 2026-06-02
 
-Project source location in this repository:
-src\EnvysTextAnimator
+Project location:
+C:\Users\JULI\Documents\echnologia\EchnoTextAnimator
 
 Current Resolve launcher files:
-Create_Envys_Text_Animator_UI_Modular.lua
+Create_Echno_Text_Animator_UI_Modular.lua
 Envys_Text_Animator.lua
 
 Current main modules:
@@ -18,6 +18,57 @@ modules\followers.lua
 modules\easing.lua
 modules\title_insert.lua
 modules\utils.lua
+
+
+================================================================================
+BETA 0.0.3 - BRANDED UI REDESIGN
+================================================================================
+
+Status:
+- Confirmed working in 24fps and 60fps projects before the UI redesign pass.
+- Marked as the current golden checkpoint.
+
+Timing model stabilized:
+- Kept Resolve's generated title clip at the default 5-second source duration.
+- Source range now fits inside Resolve's default title duration instead of
+  fighting timeline item duration changes.
+- 24fps baseline:
+  - SourceStart = 0
+  - SourceEnd = 119
+  - StretchStart = 35
+  - StretchEnd = 80
+  - Base animation in remains 0 -> 10.
+  - Base animation out remains 90 -> 100.
+- 60fps behavior is FPS-scaled from the 24fps baseline and was tested clean.
+- Important logic decision:
+  - Changing the KeyStretcher region must not move base animation keyframes.
+  - The stretcher controls the hold section only.
+
+UI redesign:
+- Reworked the Lua UI toward the branded creator-tool mockup.
+- Added branded header with build/version label.
+- Rebuilt the layout into cleaner sections:
+  - Text Input
+  - Text Style
+  - Follower
+  - Animation In
+  - Animation Out
+  - Easing
+  - Animation Length
+  - Debug Log
+- Kept Animation In and Animation Out as compact two-column panels.
+- Removed unused/dead preview area.
+- Added collapsible Debug Log with Hide/Show button.
+- Kept the disabled Custom Bezier placeholder.
+- Made the Place Text button a larger mint-colored primary CTA.
+- Preserved existing widget IDs and event handlers so the animation engine and
+  generation path stayed untouched.
+
+Notes:
+- DaVinci Resolve's Lua UI does not fully behave like browser CSS, so the HTML
+  mockup was translated into native UIManager groups, labels, buttons, and
+  spacing rather than copied directly.
+- The engine was not redesigned during this UI pass.
 
 
 ================================================================================
@@ -349,7 +400,7 @@ Project name changed to:
 
 Logo:
 - Loaded from:
-  assets\Envystalogo.png
+  C:\Users\JULI\Documents\echnologia\assets\Envystalogo.png
 
 Changes made:
 - Added logo to UI.
@@ -420,7 +471,7 @@ Decision:
 VERSION CHECKPOINTS
 ================================================================================
 
-Initial golden working checkpoint
+GOLDEN_WORKING_EchnoTextAnimator_20260529
 - First reliable modular checkpoint.
 - Working title insertion path.
 - Used as the main recovery point after fragile experiments.
@@ -450,21 +501,45 @@ beta 0.0.2
 - Added slider/manual input for animation length.
 
 beta 0.0.2a
-- Current checkpoint.
 - Restored Fusion Title insertion path after append/raw insert experiments.
 - Edit-page inspector controls restored.
 - Added visible "lock track underneath" note.
 - Changed text input to real placeholder behavior.
 - Kept custom animation length and FPS-aware timing work from 0.0.2.
 
+beta 0.0.3
+- Current checkpoint.
+- Confirmed clean 24fps and 60fps timing behavior.
+- Stabilized the default 5-second source model:
+  - SourceStart = 0
+  - SourceEnd = 119 at 24fps
+  - StretchStart = 35 at 24fps
+  - StretchEnd = 80 at 24fps
+  - Base animation keyframes stay independent from stretcher timing.
+- Added branded creator-tool UI redesign.
+- Added collapsible debug log.
+- Made Place Text a larger mint-colored primary CTA.
+
 
 ================================================================================
-BACKUP NOTE
+IMPORTANT BACKUPS
 ================================================================================
 
-During development, local backups were created before risky Resolve insertion,
-timing, and UI changes. Those backup folders are intentionally excluded from the
-public repository. The first public checkpoint is beta 0.0.2a.
+Golden backup:
+C:\Users\JULI\Documents\echnologia\backups\GOLDEN_WORKING_EchnoTextAnimator_20260529
+
+Current checkpoint:
+C:\Users\JULI\Documents\echnologia\backups\GOLDEN_BETA_0.0.3_20260602
+
+Other useful recent backups:
+C:\Users\JULI\Documents\echnologia\backups\BETA_0.0.2_20260531
+C:\Users\JULI\Documents\echnologia\backups\BEFORE_0.0.2_ROOT_FIX_20260531
+C:\Users\JULI\Documents\echnologia\backups\BEFORE_FPS_AWARE_TIMING_UI_20260531
+C:\Users\JULI\Documents\echnologia\backups\BEFORE_CUSTOM_ANIMATION_LENGTH_ENGINE_20260531
+C:\Users\JULI\Documents\echnologia\backups\BEFORE_ANIMATION_LENGTH_SLIDER_20260531
+C:\Users\JULI\Documents\echnologia\backups\BEFORE_APPEND_TIMELINE_INSERT_EXPERIMENT_20260531
+C:\Users\JULI\Documents\echnologia\backups\BEFORE_RESTORE_FUSION_TITLE_INSERT_20260531
+C:\Users\JULI\Documents\echnologia\backups\BEFORE_TEXT_PLACEHOLDER_UI_20260531
 
 
 ================================================================================
@@ -477,8 +552,8 @@ CURRENT KNOWN ISSUES
 2. Full timeline-safe insertion is not solved yet.
    Planned approach: temporary track locking if Resolve API supports it cleanly.
 
-3. FPS-aware timing is implemented but still needs practical testing in 24, 30,
-   and 60fps projects.
+3. 30fps timing still needs practical confirmation. 24fps and 60fps were tested
+   clean with the fixed 5-second source model.
 
 4. Custom Bezier editor is not implemented.
 
@@ -498,15 +573,6 @@ PLANNED ROADMAP
 - Remove dead MediaPool append experiment code if fully unused.
 - Keep raw comp fallback only for emergency fallback.
 
-0.0.3 - UI Redesign
-- Darker layered panels, less flat grey.
-- Logo section with better breathing room.
-- Section headers with accent border.
-- Place Text button as dominant CTA.
-- Remove any leftover preview panel concepts.
-- Reclaim preview space for cleaner layout.
-- Collapsible debug log.
-
 0.1.0 - Feature Drop
 - Preset save/load system.
 - Recent animations list.
@@ -525,7 +591,7 @@ SUMMARY
 ================================================================================
 
 Envy's Text Animator is currently a working modular Lua tool for DaVinci Resolve.
-The current beta 0.0.2a can generate editable Fusion Titles from a UI, with
+The current beta 0.0.3 can generate editable Fusion Titles from a UI, with
 stackable animation in/out options, follower modes, slide directions, easing
 choices, and custom animation length.
 

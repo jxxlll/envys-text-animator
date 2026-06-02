@@ -1,0 +1,21 @@
+# Local development clutter
+backups/
+*.zip
+*.drfx
+*.comp
+*.setting
+*.tmp
+*.log
+
+# DaVinci Resolve local install/export folders
+Templates/
+Scripts/
+Utility/
+Support/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

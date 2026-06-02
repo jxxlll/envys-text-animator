@@ -1,4 +1,4 @@
-local Easing = require("EnvysTextAnimator.modules.easing")
+﻿local Easing = require("EnvysTextAnimator.modules.easing")
 
 local AnimOut = {}
 
@@ -710,3 +710,4 @@ function AnimOut.combinedOutputSource(animationsIn, animationsOut, follower)
 end
 
 return AnimOut
+

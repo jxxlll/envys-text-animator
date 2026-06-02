@@ -1,4 +1,4 @@
--- Envy's Text Animator UI - beta 0.0.2a.
+﻿-- Envy's Text Animator UI - beta 0.0.3.
 -- This file owns UI state only. Animation generation stays in the modules.
 
 local function fileExists(path)
@@ -38,7 +38,7 @@ local function resolveScriptRoot()
 	end
 
 	addCandidate(os.getenv("ENVYS_TEXT_ANIMATOR_ROOT"))
-	addCandidate(os.getenv("USERPROFILE") and (os.getenv("USERPROFILE") .. "\\Documents\\envys-text-animator\\src") or nil)
+	addCandidate(os.getenv("USERPROFILE") and (os.getenv("USERPROFILE") .. "\\Documents\\echnologia") or nil)
 	addCandidate(scriptDir)
 	addCandidate(dirname(scriptDir))
 
@@ -149,8 +149,307 @@ local easingOptions = {
 	{ label = "Elastic", key = "elastic", engineKey = "elastic" },
 }
 
+local fallbackFontOptions = {
+	{ label = "Open Sans", key = "Open Sans" },
+	{ label = "Arial", key = "Arial" },
+	{ label = "Calibri", key = "Calibri" },
+	{ label = "Segoe UI", key = "Segoe UI" },
+	{ label = "Poppins", key = "Poppins" },
+	{ label = "Montserrat", key = "Montserrat" },
+	{ label = "Inter", key = "Inter" },
+	{ label = "Roboto", key = "Roboto" },
+	{ label = "Times New Roman", key = "Times New Roman" },
+}
+
+local fallbackFontStyleMap = {
+	["Open Sans"] = { Regular = true },
+	Arial = { Regular = true, Bold = true, Italic = true, ["Bold Italic"] = true },
+	Calibri = { Regular = true, Bold = true, Italic = true, ["Bold Italic"] = true, Light = true },
+	["Segoe UI"] = { Regular = true, Bold = true, Italic = true, ["Bold Italic"] = true, Semibold = true },
+	Poppins = { Regular = true, Medium = true, SemiBold = true, Bold = true },
+	Montserrat = { Regular = true, Medium = true, SemiBold = true, Bold = true },
+	Inter = { Regular = true, Medium = true, SemiBold = true, Bold = true },
+	Roboto = { Regular = true, Medium = true, Bold = true, Italic = true },
+	["Times New Roman"] = { Regular = true, Bold = true, Italic = true, ["Bold Italic"] = true },
+}
+
+local fontStyleOrder = {
+	"Regular",
+	"Light",
+	"Medium",
+	"Semibold",
+	"SemiBold",
+	"Bold",
+	"ExtraBold",
+	"Black",
+	"Italic",
+	"Bold Italic",
+	"Condensed",
+	"Condensed Light",
+	"Condensed Medium",
+	"Condensed Bold",
+	"Condensed Black",
+	"Expanded",
+	"Expanded Light",
+	"Expanded Medium",
+	"Expanded Bold",
+	"Expanded Black",
+	"Extraexpanded",
+	"Extraexpanded Light",
+	"Extraexpanded Medium",
+	"Extraexpanded Bold",
+	"Extraexpanded Black",
+}
+
+local baseFontStyleOptions = {
+	{ label = "Regular", key = "Regular" },
+	{ label = "Light", key = "Light" },
+	{ label = "Medium", key = "Medium" },
+	{ label = "Semibold", key = "Semibold" },
+	{ label = "SemiBold", key = "SemiBold" },
+	{ label = "Bold", key = "Bold" },
+	{ label = "ExtraBold", key = "ExtraBold" },
+	{ label = "Black", key = "Black" },
+	{ label = "Italic", key = "Italic" },
+	{ label = "Bold Italic", key = "Bold Italic" },
+}
+
+local function normalizeFontStyle(style)
+	local cleaned = tostring(style or ""):gsub("^%s+", ""):gsub("%s+$", "")
+	local lower = cleaned:lower()
+	if lower == "" or lower == "normal" then
+		return "Regular"
+	elseif lower == "semibold" or lower == "semi bold" or lower == "demibold" or lower == "demi bold" then
+		return "SemiBold"
+	elseif lower == "bolditalic" or lower == "bold italic" then
+		return "Bold Italic"
+	elseif lower == "extrabold" or lower == "extra bold" then
+		return "ExtraBold"
+	elseif lower == "regular" then
+		return "Regular"
+	elseif lower == "light" then
+		return "Light"
+	elseif lower == "medium" then
+		return "Medium"
+	elseif lower == "bold" then
+		return "Bold"
+	elseif lower == "black" then
+		return "Black"
+	elseif lower == "italic" then
+		return "Italic"
+	end
+
+	cleaned = cleaned:gsub("Extra Expanded", "Extraexpanded")
+	cleaned = cleaned:gsub("Semi Bold", "SemiBold")
+	cleaned = cleaned:gsub("Semibold", "SemiBold")
+	cleaned = cleaned:gsub("Extra Bold", "ExtraBold")
+	cleaned = cleaned:gsub("^Normal%s+", "")
+	if cleaned == "Normal" then
+		return "Regular"
+	end
+
+	return cleaned
+end
+
+local function normalizeFontFamily(family)
+	local cleaned = tostring(family or ""):gsub("^%s+", ""):gsub("%s+$", "")
+	cleaned = cleaned:gsub("%s+PERSONAL%s+USE$", "")
+	cleaned = cleaned:gsub("%s+PERSONAL$", "")
+	cleaned = cleaned:gsub("(%S)FREE$", "%1 FREE")
+	cleaned = cleaned:gsub("%s+", " ")
+
+	return cleaned
+end
+
+local function buildFontStyleSuffixes()
+	local widths = {
+		"Extraexpanded",
+		"Extra Expanded",
+		"Expanded",
+		"Condensed",
+		"Normal",
+	}
+	local weights = {
+		"ExtraBold",
+		"Extra Bold",
+		"SemiBold",
+		"Semibold",
+		"Semi Bold",
+		"Medium",
+		"Light",
+		"Black",
+		"Bold",
+		"Regular",
+	}
+	local suffixes = {
+		"ExtraBold Italic",
+		"Extra Bold Italic",
+		"Bold Italic",
+		"SemiBold Italic",
+		"Semibold Italic",
+		"Semi Bold Italic",
+		"Medium Italic",
+		"Light Italic",
+	}
+
+	for _, width in ipairs(widths) do
+		for _, weight in ipairs(weights) do
+			table.insert(suffixes, width .. " " .. weight .. " Italic")
+		end
+		table.insert(suffixes, width .. " Italic")
+	end
+
+	for _, width in ipairs(widths) do
+		for _, weight in ipairs(weights) do
+			table.insert(suffixes, width .. " " .. weight)
+		end
+		table.insert(suffixes, width)
+	end
+
+	for _, suffix in ipairs(fontStyleOrder) do
+		table.insert(suffixes, suffix)
+	end
+
+	return suffixes
+end
+
+local fontStyleSuffixes = buildFontStyleSuffixes()
+
+local function detectFontFamilyAndStyle(displayName)
+	local name = tostring(displayName or "")
+	name = name:gsub("%s*%b()%s*$", "")
+	name = name:gsub("^%s+", ""):gsub("%s+$", "")
+
+	local lowerName = name:lower()
+	for _, suffix in ipairs(fontStyleSuffixes) do
+		local lowerSuffix = suffix:lower()
+		local fromIndex = #lowerName - #lowerSuffix + 1
+		if fromIndex > 1 and lowerName:sub(fromIndex) == lowerSuffix and lowerName:sub(fromIndex - 1, fromIndex - 1) == " " then
+			local family = name:sub(1, fromIndex - 2):gsub("%s+$", "")
+			if family ~= "" then
+				return family, normalizeFontStyle(suffix)
+			end
+		end
+	end
+
+	return name, "Regular"
+end
+
+local function addFont(fontMap, family, style)
+	family = normalizeFontFamily(family)
+	if not family or family == "" then
+		return
+	end
+
+	fontMap[family] = fontMap[family] or {}
+	fontMap[family][normalizeFontStyle(style)] = true
+end
+
+local function addRegistryFontDisplayName(fontMap, displayName)
+	for namePart in tostring(displayName or ""):gmatch("[^&]+") do
+		local family, style = detectFontFamilyAndStyle(namePart)
+		addFont(fontMap, family, style)
+	end
+end
+
+local function scanRegistryFonts(fontMap, registryPath)
+	local command = 'reg query "' .. registryPath .. '"'
+	local pipe = io.popen(command)
+	if not pipe then
+		return
+	end
+
+	for line in pipe:lines() do
+		local displayName = line:match("^%s*(.-)%s+REG_%S+%s+.+$")
+		if displayName and displayName ~= "" then
+			addRegistryFontDisplayName(fontMap, displayName)
+		end
+	end
+
+	pipe:close()
+end
+
+local function sortedFontOptions(fontMap)
+	local names = {}
+	for family in pairs(fontMap) do
+		table.insert(names, family)
+	end
+	table.sort(names, function(a, b)
+		return a:lower() < b:lower()
+	end)
+
+	local options = {}
+	for _, family in ipairs(names) do
+		table.insert(options, { label = family, key = family })
+	end
+
+	return options
+end
+
+local function loadWindowsFonts()
+	local fontMap = {}
+
+	for family, styles in pairs(fallbackFontStyleMap) do
+		for style in pairs(styles) do
+			addFont(fontMap, family, style)
+		end
+	end
+
+	if io and io.popen then
+		scanRegistryFonts(fontMap, "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts")
+		scanRegistryFonts(fontMap, "HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts")
+	end
+
+	return sortedFontOptions(fontMap), fontMap
+end
+
+local fontOptions, fontStyleMap = loadWindowsFonts()
+local fontStyleOptions = {}
+
+local function styleOptionsForFont(fontFamily)
+	local styles = fontStyleMap[fontFamily] or {}
+	local options = {}
+
+	for _, style in ipairs(fontStyleOrder) do
+		if style == "Regular" or styles[style] then
+			table.insert(options, { label = style, key = style })
+		end
+	end
+
+	local added = {}
+	for _, item in ipairs(options) do
+		added[item.key] = true
+	end
+
+	local extraStyles = {}
+	for style in pairs(styles) do
+		if not added[style] then
+			table.insert(extraStyles, style)
+		end
+	end
+	table.sort(extraStyles, function(a, b)
+		return a:lower() < b:lower()
+	end)
+
+	for _, style in ipairs(extraStyles) do
+		table.insert(options, { label = style, key = style })
+	end
+
+	if #options == 0 then
+		table.insert(options, { label = "Regular", key = "Regular" })
+	end
+
+	return options
+end
+
+fontStyleOptions = styleOptionsForFont(Config.defaultFont)
+
 local config = {
 	text = Config.defaultText,
+	textStyle = {
+		font = Config.defaultFont,
+		style = Config.defaultFontStyle,
+	},
 	follower = {
 		mode = "char",
 	},
@@ -182,6 +481,7 @@ local config = {
 }
 
 local debugLines = {}
+local debugLogVisible = true
 
 local function optionKey(options, index, fallback)
 	local item = options[(tonumber(index) or 0) + 1]
@@ -247,17 +547,54 @@ local function appendLog(items, level, message)
 end
 
 local function addComboItems(combo, options, selectedKey)
+	pcall(function()
+		combo:Clear()
+	end)
+	pcall(function()
+		combo:ClearItems()
+	end)
+
+	local selectedIndex = 0
 	for index, item in ipairs(options) do
 		pcall(function()
 			combo:AddItem(item.label)
 		end)
 
 		if item.key == selectedKey then
-			pcall(function()
-				combo.CurrentIndex = index - 1
-			end)
+			selectedIndex = index - 1
 		end
 	end
+
+	pcall(function()
+		combo.CurrentIndex = selectedIndex
+	end)
+end
+
+local function hasOption(options, key)
+	for _, item in ipairs(options) do
+		if item.key == key then
+			return true
+		end
+	end
+
+	return false
+end
+
+local function refreshFontStyleOptions(items, fontFamily, preferredStyle)
+	fontStyleOptions = styleOptionsForFont(fontFamily)
+	local selectedStyle = preferredStyle
+	if not hasOption(fontStyleOptions, selectedStyle) then
+		selectedStyle = "Regular"
+	end
+	if not hasOption(fontStyleOptions, selectedStyle) and fontStyleOptions[1] then
+		selectedStyle = fontStyleOptions[1].key
+	end
+
+	if items and items.FontStyleCombo then
+		addComboItems(items.FontStyleCombo, fontStyleOptions, selectedStyle)
+	end
+
+	config.textStyle.style = selectedStyle or "Regular"
 end
 
 local function setChecked(item, value)
@@ -399,6 +736,8 @@ local function configToEngineState(uiConfig)
 		animationsOut = animationOut,
 		easingIn = easingEngineKey(uiConfig.easing.inType),
 		easingOut = easingEngineKey(uiConfig.easing.outType),
+		fontFamily = uiConfig.textStyle.font,
+		fontStyle = uiConfig.textStyle.style,
 		animationLengthSeconds = uiConfig.animationLengthSeconds,
 	}
 end
@@ -410,6 +749,8 @@ local function readConfigFromUI(items)
 	end
 
 	config.text = text
+	config.textStyle.font = optionKey(fontOptions, items.FontCombo.CurrentIndex, Config.defaultFont)
+	config.textStyle.style = optionKey(fontStyleOptions, items.FontStyleCombo.CurrentIndex, Config.defaultFontStyle)
 	config.follower.mode = optionKey(followerOptions, items.FollowerCombo.CurrentIndex, "char")
 	config.animationIn.fade = getChecked(items.AnimInFade)
 	config.animationIn.blur = getChecked(items.AnimInBlur)
@@ -433,6 +774,7 @@ local function readConfigFromUI(items)
 end
 
 local function logCurrentConfig(items)
+	appendLog(items, "INFO", "Font: " .. config.textStyle.font .. " / " .. config.textStyle.style)
 	appendLog(items, "INFO", "Selected follower: " .. optionLabel(followerOptions, config.follower.mode))
 	appendLog(items, "INFO", "Animation In: " .. selectedAnimations(config.animationIn))
 	appendLog(items, "INFO", "Animation Out: " .. selectedAnimations(config.animationOut))
@@ -443,99 +785,139 @@ local function logCurrentConfig(items)
 	appendLog(items, "INFO", "Animation Length: " .. string.format("%.4f", config.animationLengthSeconds) .. "s")
 end
 
+local function sectionLabel(text)
+	return [[<span style="color:#5ae4a8;font-weight:600;letter-spacing:2px;">]] .. text .. [[</span>]]
+end
+
+local function mutedLabel(text)
+	return [[<span style="color:#8a8a8a;">]] .. text .. [[</span>]]
+end
+
 local win = dispatcher:AddWindow({
 	ID = "EnvysTextAnimatorWindow",
 	WindowTitle = Config.appName .. " - " .. Config.version,
-	Geometry = { 100, 100, 520, 740 },
-	Spacing = 7,
-	Margin = 16,
+	Geometry = { 100, 100, 520, 760 },
+	Spacing = 10,
+	Margin = 14,
 }, ui:VGroup{
 	ID = "Root",
-	Spacing = 7,
+	Spacing = 10,
 
-	ui:VGroup{
-		ID = "HeaderInputStack",
+	ui:HGroup{
+		ID = "BrandHeader",
 		Spacing = 10,
 		ui:Label{
-			ID = "LogoHeader",
-			Text = logoHtml,
-			MinimumSize = { 460, 88 },
-			Alignment = { AlignHCenter = true, AlignVCenter = true },
+			ID = "BrandName",
+			Text = [[<span style="color:#5ae4a8;font-weight:700;">Envys</span><span style="color:#555;"> . </span><span style="color:#b8b8b8;">Text Animator</span>]],
+			MinimumSize = { 360, 26 },
+			Alignment = { AlignLeft = true, AlignVCenter = true },
 		},
+		ui:Label{
+			ID = "BuildLabel",
+			Text = [[<span style="color:#666;">]] .. Config.version .. [[</span>]],
+			MinimumSize = { 110, 26 },
+			Alignment = { AlignRight = true, AlignVCenter = true },
+		},
+	},
+
+	ui:VGroup{
+		ID = "TextPanel",
+		Spacing = 6,
+		ui:Label{ ID = "TextInputLabel", Text = sectionLabel("TEXT INPUT") },
 		ui:TextEdit{
 			ID = "TextInput",
 			PlainText = "",
 			PlaceholderText = Config.defaultText,
-			MinimumSize = { 460, 104 },
+			MinimumSize = { 480, 92 },
 		},
 	},
 
 	ui:VGroup{
+		ID = "StylePanel",
 		Spacing = 6,
-		ui:Label{ ID = "FollowerLabel", Text = "Follower" },
-		ui:ComboBox{ ID = "FollowerCombo" },
-	},
-
-	ui:HGroup{
-		Spacing = 18,
-		ui:VGroup{
-			Spacing = 6,
-			ui:Label{ ID = "AnimationInLabel", Text = "Animation In" },
-			ui:HGroup{
-				Spacing = 12,
-				ui:CheckBox{ ID = "AnimInSlide", Text = "Slide" },
-				ui:ComboBox{ ID = "SlideInDirectionCombo", MinimumSize = { 92, 22 } },
-			},
-			ui:HGroup{
-				Spacing = 12,
-				ui:CheckBox{ ID = "AnimInBlur", Text = "Blur" },
-				ui:CheckBox{ ID = "AnimInRotate", Text = "Rotate" },
-			},
-			ui:HGroup{
-				Spacing = 12,
-				ui:CheckBox{ ID = "AnimInFade", Text = "Fade" },
-				ui:CheckBox{ ID = "AnimInScale", Text = "Scale" },
-			},
-		},
-		ui:VGroup{
-			Spacing = 6,
-			ui:Label{ ID = "AnimationOutLabel", Text = "Animation Out" },
-			ui:HGroup{
-				Spacing = 12,
-				ui:CheckBox{ ID = "AnimOutSlide", Text = "Slide" },
-				ui:ComboBox{ ID = "SlideOutDirectionCombo", MinimumSize = { 92, 22 } },
-			},
-			ui:HGroup{
-				Spacing = 12,
-				ui:CheckBox{ ID = "AnimOutBlur", Text = "Blur" },
-				ui:CheckBox{ ID = "AnimOutRotate", Text = "Rotate" },
-			},
-			ui:HGroup{
-				Spacing = 12,
-				ui:CheckBox{ ID = "AnimOutFade", Text = "Fade" },
-				ui:CheckBox{ ID = "AnimOutScale", Text = "Scale" },
-			},
-		},
-	},
-
-	ui:Label{ ID = "EasingLabel", Text = "Easing" },
-	ui:HGroup{
-		Spacing = 10,
-		ui:VGroup{
-			Spacing = 4,
-			ui:Label{ ID = "EasingInLabel", Text = "Easing In" },
-			ui:ComboBox{ ID = "EasingInCombo" },
-		},
-		ui:VGroup{
-			Spacing = 4,
-			ui:Label{ ID = "EasingOutLabel", Text = "Easing Out" },
-			ui:ComboBox{ ID = "EasingOutCombo" },
+		ui:Label{ ID = "TextStyleLabel", Text = sectionLabel("TEXT STYLE") },
+		ui:HGroup{
+			Spacing = 10,
+			ui:ComboBox{ ID = "FontCombo", MinimumSize = { 320, 24 } },
+			ui:ComboBox{ ID = "FontStyleCombo", MinimumSize = { 150, 24 } },
 		},
 	},
 
 	ui:VGroup{
-		Spacing = 4,
-		ui:Label{ ID = "AnimationLengthLabel", Text = "Animation Length (sec)" },
+		ID = "FollowerPanel",
+		Spacing = 6,
+		ui:Label{ ID = "FollowerLabel", Text = sectionLabel("FOLLOWER") },
+		ui:ComboBox{ ID = "FollowerCombo", MinimumSize = { 480, 24 } },
+	},
+
+	ui:HGroup{
+		ID = "AnimationPanels",
+		Spacing = 12,
+		ui:VGroup{
+			ID = "AnimationInPanel",
+			Spacing = 7,
+			ui:Label{ ID = "AnimationInLabel", Text = sectionLabel("ANIMATION IN") },
+			ui:HGroup{
+				Spacing = 8,
+				ui:CheckBox{ ID = "AnimInSlide", Text = "Slide", MinimumSize = { 76, 20 } },
+				ui:ComboBox{ ID = "SlideInDirectionCombo", MinimumSize = { 136, 22 } },
+			},
+			ui:HGroup{
+				Spacing = 8,
+				ui:CheckBox{ ID = "AnimInBlur", Text = "Blur", MinimumSize = { 104, 20 } },
+				ui:CheckBox{ ID = "AnimInRotate", Text = "Rotate", MinimumSize = { 104, 20 } },
+			},
+			ui:HGroup{
+				Spacing = 8,
+				ui:CheckBox{ ID = "AnimInFade", Text = "Fade", MinimumSize = { 104, 20 } },
+				ui:CheckBox{ ID = "AnimInScale", Text = "Scale", MinimumSize = { 104, 20 } },
+			},
+		},
+		ui:VGroup{
+			ID = "AnimationOutPanel",
+			Spacing = 7,
+			ui:Label{ ID = "AnimationOutLabel", Text = sectionLabel("ANIMATION OUT") },
+			ui:HGroup{
+				Spacing = 8,
+				ui:CheckBox{ ID = "AnimOutSlide", Text = "Slide", MinimumSize = { 76, 20 } },
+				ui:ComboBox{ ID = "SlideOutDirectionCombo", MinimumSize = { 136, 22 } },
+			},
+			ui:HGroup{
+				Spacing = 8,
+				ui:CheckBox{ ID = "AnimOutBlur", Text = "Blur", MinimumSize = { 104, 20 } },
+				ui:CheckBox{ ID = "AnimOutRotate", Text = "Rotate", MinimumSize = { 104, 20 } },
+			},
+			ui:HGroup{
+				Spacing = 8,
+				ui:CheckBox{ ID = "AnimOutFade", Text = "Fade", MinimumSize = { 104, 20 } },
+				ui:CheckBox{ ID = "AnimOutScale", Text = "Scale", MinimumSize = { 104, 20 } },
+			},
+		},
+	},
+
+	ui:VGroup{
+		ID = "EasingPanel",
+		Spacing = 6,
+		ui:Label{ ID = "EasingLabel", Text = sectionLabel("EASING") },
+		ui:HGroup{
+			Spacing = 10,
+			ui:VGroup{
+				Spacing = 4,
+				ui:Label{ ID = "EasingInLabel", Text = mutedLabel("In") },
+				ui:ComboBox{ ID = "EasingInCombo", MinimumSize = { 235, 24 } },
+			},
+			ui:VGroup{
+				Spacing = 4,
+				ui:Label{ ID = "EasingOutLabel", Text = mutedLabel("Out") },
+				ui:ComboBox{ ID = "EasingOutCombo", MinimumSize = { 235, 24 } },
+			},
+		},
+	},
+
+	ui:VGroup{
+		ID = "AnimationLengthPanel",
+		Spacing = 5,
+		ui:Label{ ID = "AnimationLengthLabel", Text = sectionLabel("ANIMATION LENGTH") },
 		ui:HGroup{
 			Spacing = 10,
 			ui:Slider{
@@ -543,12 +925,12 @@ local win = dispatcher:AddWindow({
 				Minimum = animationSecondsToSliderValue(Config.minAnimationSeconds),
 				Maximum = animationSecondsToSliderValue(Config.maxAnimationSeconds),
 				Value = animationSecondsToSliderValue(Config.defaultAnimationSeconds),
-				MinimumSize = { 340, 24 },
+				MinimumSize = { 360, 24 },
 			},
 			ui:LineEdit{
 				ID = "AnimationLengthInput",
 				Text = string.format("%.4f", Config.defaultAnimationSeconds),
-				MinimumSize = { 110, 24 },
+				MinimumSize = { 100, 24 },
 			},
 		},
 	},
@@ -557,33 +939,60 @@ local win = dispatcher:AddWindow({
 		ID = "CustomBezierPlaceholder",
 		Text = "Custom Bezier - Coming Later",
 		Enabled = false,
-		MinimumSize = { 460, 26 },
+		MinimumSize = { 480, 26 },
 	},
 
-	ui:Label{ ID = "DebugLogLabel", Text = "Debug Log" },
-	ui:TextEdit{
-		ID = "DebugLog",
-		ReadOnly = true,
-		PlainText = "",
-		MinimumSize = { 460, 90 },
+	ui:VGroup{
+		ID = "DebugPanel",
+		Spacing = 5,
+		ui:HGroup{
+			Spacing = 8,
+			ui:Label{ ID = "DebugLogLabel", Text = sectionLabel("DEBUG LOG"), MinimumSize = { 360, 22 } },
+			ui:Button{ ID = "DebugToggle", Text = "Hide", MinimumSize = { 90, 22 } },
+		},
+		ui:TextEdit{
+			ID = "DebugLog",
+			ReadOnly = true,
+			PlainText = "",
+			MinimumSize = { 480, 76 },
+		},
 	},
 
 	ui:Label{
 		ID = "TrackLockNote",
-		Text = "Tip: lock the track underneath before placing text.",
+		Text = [[<span style="color:#5ae4a8;">tip:</span><span style="color:#8a8a8a;"> lock the track underneath before placing text.</span>]],
 		Alignment = { AlignHCenter = true, AlignVCenter = true },
-		MinimumSize = { 460, 20 },
+		MinimumSize = { 480, 20 },
 	},
 
 	ui:Button{
 		ID = "GenerateText",
-		Text = "Place Text",
-		MinimumSize = { 460, 38 },
+		Text = "PLACE TEXT",
+		MinimumSize = { 480, 52 },
+		StyleSheet = [[
+			QPushButton {
+				background-color: #5ae4a8;
+				color: #0b1a13;
+				border: 1px solid #72eebc;
+				border-radius: 7px;
+				font-size: 15px;
+				font-weight: 800;
+				letter-spacing: 1px;
+			}
+			QPushButton:hover {
+				background-color: #72eebc;
+			}
+			QPushButton:pressed {
+				background-color: #42c98e;
+			}
+		]],
 	},
 })
 
 local items = win:GetItems()
 
+addComboItems(items.FontCombo, fontOptions, config.textStyle.font)
+refreshFontStyleOptions(items, config.textStyle.font, config.textStyle.style)
 addComboItems(items.FollowerCombo, followerOptions, config.follower.mode)
 addComboItems(items.SlideInDirectionCombo, slideDirectionOptions, config.slideIn.direction)
 addComboItems(items.SlideOutDirectionCombo, slideDirectionOptions, config.slideOut.direction)
@@ -602,6 +1011,7 @@ setChecked(items.AnimOutScale, config.animationOut.scale)
 setChecked(items.AnimOutRotate, config.animationOut.rotate)
 
 appendLog(items, "INFO", "UI loaded")
+appendLog(items, "INFO", "Loaded fonts: " .. tostring(#fontOptions))
 logCurrentConfig(items)
 
 function win.On.EnvysTextAnimatorWindow.Close(ev)
@@ -611,6 +1021,19 @@ end
 function win.On.FollowerCombo.CurrentIndexChanged(ev)
 	readConfigFromUI(items)
 	appendLog(items, "INFO", "Selected follower: " .. optionLabel(followerOptions, config.follower.mode))
+end
+
+function win.On.FontCombo.CurrentIndexChanged(ev)
+	local previousStyle = config.textStyle.style
+	config.textStyle.font = optionKey(fontOptions, items.FontCombo.CurrentIndex, Config.defaultFont)
+	refreshFontStyleOptions(items, config.textStyle.font, previousStyle)
+	readConfigFromUI(items)
+	appendLog(items, "INFO", "Font: " .. config.textStyle.font .. " / " .. config.textStyle.style)
+end
+
+function win.On.FontStyleCombo.CurrentIndexChanged(ev)
+	readConfigFromUI(items)
+	appendLog(items, "INFO", "Font: " .. config.textStyle.font .. " / " .. config.textStyle.style)
 end
 
 function win.On.SlideInDirectionCombo.CurrentIndexChanged(ev)
@@ -631,6 +1054,13 @@ end
 function win.On.EasingOutCombo.CurrentIndexChanged(ev)
 	readConfigFromUI(items)
 	appendLog(items, "INFO", "Easing Out: " .. optionLabel(easingOptions, config.easing.outType))
+end
+
+function win.On.DebugToggle.Clicked(ev)
+	debugLogVisible = not debugLogVisible
+	items.DebugLog.Hidden = not debugLogVisible
+	items.DebugToggle.Text = debugLogVisible and "Hide" or "Show"
+	appendLog(items, "INFO", debugLogVisible and "Debug log expanded" or "Debug log collapsed")
 end
 
 function win.On.AnimationLengthSlider.ValueChanged(ev)
@@ -714,3 +1144,4 @@ end
 win:Show()
 dispatcher:RunLoop()
 win:Hide()
+

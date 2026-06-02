@@ -1,4 +1,4 @@
-local Followers = {}
+﻿local Followers = {}
 
 Followers.labels = {
 	char = "Character",
@@ -21,3 +21,4 @@ function Followers.label(key)
 end
 
 return Followers
+

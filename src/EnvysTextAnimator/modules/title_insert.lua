@@ -1,4 +1,4 @@
-local Config = require("EnvysTextAnimator.modules.config")
+﻿local Config = require("EnvysTextAnimator.modules.config")
 local Utils = require("EnvysTextAnimator.modules.utils")
 local Generator = require("EnvysTextAnimator.modules.generator")
 
@@ -26,6 +26,24 @@ function TitleInsert.setClipDuration(project, timeline, item, durationSeconds, a
 	pcall(function()
 		item:SetProperty("Duration", durationFrames)
 	end)
+
+	-- Resolve can ignore Duration for generated Fusion Titles, so also trim the
+	-- actual timeline item end to match the rendered source range.
+	pcall(function()
+		local startFrame = item:GetStart()
+		if startFrame then
+			item:SetEnd(startFrame + durationFrames)
+		end
+	end)
+
+	pcall(function()
+		local startFrame = item:GetStart()
+		if startFrame then
+			item:SetProperty("End", startFrame + durationFrames)
+		end
+	end)
+
+	return durationFrames
 end
 
 function TitleInsert.tryInsertGeneratedTitle(timeline, compText)
@@ -100,14 +118,15 @@ function TitleInsert.placeText(resolve, textValue, state)
 		return false
 	end
 
-	TitleInsert.setClipDuration(project, timeline, item, state.durationSeconds, state.animationLengthSeconds)
+	local durationFrames = TitleInsert.setClipDuration(project, timeline, item, state.durationSeconds, state.animationLengthSeconds)
 
 	pcall(function()
 		item:SetClipColor("Teal")
 	end)
 
-	print("Placed Envy's text at the current playhead.")
+	print("Placed Envy's text at the current playhead. Target duration: " .. tostring(durationFrames) .. " frames.")
 	return true
 end
 
 return TitleInsert
+

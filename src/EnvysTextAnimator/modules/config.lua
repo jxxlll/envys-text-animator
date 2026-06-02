@@ -1,18 +1,20 @@
-local Config = {}
+﻿local Config = {}
 
 Config.titleName = "Envys Text Animator Generated"
 Config.appName = "Envy's Text Animator"
-Config.version = "beta 0.0.2a"
+Config.version = "beta 0.0.3"
 Config.defaultText = "Your Text Here"
+Config.defaultFont = "Open Sans"
+Config.defaultFontStyle = "Regular"
 Config.defaultDurationSeconds = 5
 Config.defaultTimelineFps = 24
 Config.defaultAnimationSeconds = 10 / Config.defaultTimelineFps
 Config.minAnimationSeconds = 0.1
 Config.maxAnimationSeconds = 1.5
+Config.sourceDurationSeconds = 5
 Config.animationEndFrame = 100
-Config.stretchStartFrame = 40
-Config.stretchEndFrame = 90
-Config.tailPaddingFrames = 22
+Config.stretchStartFrame = 35
+Config.stretchEndFrame = 80
 
 local function scaledFrame(value, scale)
 	return math.floor((value * scale) + 0.5)
@@ -35,11 +37,9 @@ function Config.clampAnimationSeconds(value)
 end
 
 function Config.durationFrames(frameRate, durationSeconds, animationSeconds)
-	local seconds = tonumber(durationSeconds) or Config.defaultDurationSeconds
 	local fps = tonumber(frameRate) or Config.defaultTimelineFps
-	local timing = Config.animationTiming(fps, animationSeconds)
 
-	return math.max(timing.sourceEndFrame + 1, math.floor((fps * seconds) + 0.5))
+	return math.floor((fps * Config.sourceDurationSeconds) + 0.5)
 end
 
 function Config.globalOutFrame(frameRate, durationSeconds, animationSeconds)
@@ -50,8 +50,10 @@ function Config.animationTiming(frameRate, animationSeconds)
 	local fps = tonumber(frameRate) or Config.defaultTimelineFps
 	local scale = fps / Config.defaultTimelineFps
 	local animationFrameCount = math.max(1, math.floor((fps * Config.clampAnimationSeconds(animationSeconds)) + 0.5))
-	local outStartFrame = scaledFrame(Config.stretchEndFrame, scale)
-	local outEndFrame = outStartFrame + animationFrameCount
+	local sourceEndFrame = Config.durationFrames(fps) - 1
+	local animationEndFrame = scaledFrame(Config.animationEndFrame, scale)
+	local outEndFrame = animationEndFrame
+	local outStartFrame = math.max(animationFrameCount, outEndFrame - animationFrameCount)
 
 	return {
 		scale = scale,
@@ -63,8 +65,11 @@ function Config.animationTiming(frameRate, animationSeconds)
 		stretchEndFrame = scaledFrame(Config.stretchEndFrame, scale),
 		outStartFrame = outStartFrame,
 		outEndFrame = outEndFrame,
-		tailPaddingFrames = scaledFrame(Config.tailPaddingFrames, scale),
-		sourceEndFrame = outEndFrame + scaledFrame(Config.tailPaddingFrames, scale),
+		tailPaddingFrames = sourceEndFrame - outEndFrame,
+		animationEndFrame = animationEndFrame,
+		sourceEndFrame = sourceEndFrame,
+		renderSafetyFrames = 0,
+		renderEndFrame = sourceEndFrame,
 	}
 end
 
@@ -81,3 +86,4 @@ function Config.tempCompPath()
 end
 
 return Config
+

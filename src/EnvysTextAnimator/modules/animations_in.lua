@@ -1,4 +1,4 @@
-local Easing = require("EnvysTextAnimator.modules.easing")
+﻿local Easing = require("EnvysTextAnimator.modules.easing")
 
 local AnimIn = {}
 
@@ -413,3 +413,4 @@ function AnimIn.outputSource(animations, follower)
 end
 
 return AnimIn
+
