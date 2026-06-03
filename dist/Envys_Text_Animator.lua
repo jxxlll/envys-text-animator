@@ -1,5 +1,5 @@
-﻿-- Envy's Text Animator - compiled public launcher
--- Version: beta 0.0.3
+-- Envy's Text Animator - compiled public launcher
+-- Version: beta 0.0.4
 -- Generated from src/EnvysTextAnimator.
 
 package.preload["EnvysTextAnimator.modules.config"] = function(...)
@@ -7,7 +7,7 @@ local Config = {}
 
 Config.titleName = "Envys Text Animator Generated"
 Config.appName = "Envy's Text Animator"
-Config.version = "beta 0.0.3"
+Config.version = "beta 0.0.4"
 Config.defaultText = "Your Text Here"
 Config.defaultFont = "Open Sans"
 Config.defaultFontStyle = "Regular"
@@ -91,6 +91,7 @@ function Config.tempCompPath()
 end
 
 return Config
+
 end
 
 package.preload["EnvysTextAnimator.modules.utils"] = function(...)
@@ -121,6 +122,7 @@ function Utils.ensureDir(path)
 end
 
 return Utils
+
 end
 
 package.preload["EnvysTextAnimator.modules.followers"] = function(...)
@@ -133,9 +135,9 @@ Followers.labels = {
 }
 
 Followers.byKey = {
-	char = { label = "Character", offset = "CharacterOffset", angle = "CharacterAngleZ", sizeX = "CharacterSizeX", sizeY = "CharacterSizeY", delay = 0.6 },
-	word = { label = "Word", offset = "WordOffset", angle = "WordAngleZ", sizeX = "WordSizeX", sizeY = "WordSizeY", delay = 0.6 },
-	line = { label = "Line", offset = "LineOffset", angle = "LineAngleZ", sizeX = "LineSizeX", sizeY = "LineSizeY", delay = 0 },
+	char = { label = "Character", offset = "CharacterOffset", angle = "CharacterAngleZ", sizeX = "CharacterSizeX", sizeY = "CharacterSizeY", order = 7, delay = 0.6 },
+	word = { label = "Word", offset = "CharacterOffset", angle = "CharacterAngleZ", sizeX = "CharacterSizeX", sizeY = "CharacterSizeY", order = 6, delay = 0, wordDelay = 6, wordByWord = true },
+	line = { label = "Line", offset = "LineOffset", angle = "LineAngleZ", sizeX = "LineSizeX", sizeY = "LineSizeY", order = 7, delay = 0 },
 }
 
 function Followers.get(key)
@@ -147,6 +149,7 @@ function Followers.label(key)
 end
 
 return Followers
+
 end
 
 package.preload["EnvysTextAnimator.modules.easing"] = function(...)
@@ -369,6 +372,7 @@ function Easing.transition(startFrame, endFrame, startValue, endValue, key, reve
 end
 
 return Easing
+
 end
 
 package.preload["EnvysTextAnimator.modules.animations_in"] = function(...)
@@ -477,12 +481,29 @@ function AnimIn.slidePoints(animations)
 end
 
 local function usesWordMaskedBlur(animations, follower)
-	return follower and follower.label == "Word" and animations and (animations.blur or animations.fade)
+	return false
+end
+
+local function wordDelayInput(follower)
+	if not (follower and follower.wordByWord) then
+		return ""
+	end
+
+	return [[
+						DelayByCharacterPosition = Input {
+							Value = 30,
+							Expression = ":\nlocal d=TextMain.DelayWBW\nlocal s=tostring(self.Text.Value or \"\")\nlocal p=math.floor(time+1)\n\nlocal w=0\nlocal inw=false\nlocal i=0\n\nfor c in s:gmatch(\"[%z\\1-\\127\\194-\\244][\\128-\\191]*\") do\n\ti=i+1\n\tif c:match(\"%s\") then\n\t\tinw=false\n\telseif not inw then\n\t\tw=w+1\n\t\tinw=true\n\tend\n\tif i>=p then break end\nend\n\nreturn (w-1)*d",
+						},]]
 end
 
 function AnimIn.followerInputs(animations, follower, forceWordMaskedBlur)
 	local inputs = {}
 	local maskedBlur = forceWordMaskedBlur or usesWordMaskedBlur(animations, follower)
+
+	local delayInput = wordDelayInput(follower)
+	if delayInput ~= "" then
+		table.insert(inputs, delayInput)
+	end
 
 	if AnimIn.anySlideEnabled(animations) or maskedBlur then
 		table.insert(inputs, [[
@@ -779,14 +800,11 @@ function AnimIn.blurTool(animations, follower, timing)
 end
 
 function AnimIn.outputSource(animations, follower)
-	if animations.blur and follower and follower.label == "Word" then
-		return "Blur1"
-	end
-
 	return "TextMain"
 end
 
 return AnimIn
+
 end
 
 package.preload["EnvysTextAnimator.modules.animations_out"] = function(...)
@@ -1197,7 +1215,19 @@ local function progressFrames(hasIn, hasOut, startFrame, endFrame, inStartValue,
 end
 
 local function usesWordMaskedBlur(animationsIn, animationsOut, follower)
-	return follower and follower.label == "Word" and ((animationsIn and (animationsIn.blur or animationsIn.fade)) or (animationsOut and (animationsOut.blur or animationsOut.fade)))
+	return false
+end
+
+local function wordDelayInput(follower)
+	if not (follower and follower.wordByWord) then
+		return ""
+	end
+
+	return [[
+						DelayByCharacterPosition = Input {
+							Value = 30,
+							Expression = ":\nlocal d=TextMain.DelayWBW\nlocal s=tostring(self.Text.Value or \"\")\nlocal p=math.floor(time+1)\n\nlocal w=0\nlocal inw=false\nlocal i=0\n\nfor c in s:gmatch(\"[%z\\1-\\127\\194-\\244][\\128-\\191]*\") do\n\ti=i+1\n\tif c:match(\"%s\") then\n\t\tinw=false\n\telseif not inw then\n\t\tw=w+1\n\t\tinw=true\n\tend\n\tif i>=p then break end\nend\n\nreturn (w-1)*d",
+						},]]
 end
 
 function AnimOut.combinedFollowerInputs(animationsIn, animationsOut, follower, forceWordMaskedBlur)
@@ -1206,6 +1236,11 @@ function AnimOut.combinedFollowerInputs(animationsIn, animationsOut, follower, f
 	local maskedBlur = forceWordMaskedBlur or usesWordMaskedBlur(animationsIn, animationsOut, follower)
 
 	local inputs = {}
+
+	local delayInput = wordDelayInput(follower)
+	if delayInput ~= "" then
+		table.insert(inputs, delayInput)
+	end
 
 	if AnimOut.anySlideEnabled(animationsIn) or AnimOut.anySlideEnabled(animationsOut) or maskedBlur then
 		table.insert(inputs, [[
@@ -1494,14 +1529,11 @@ function AnimOut.combinedOutputSource(animationsIn, animationsOut, follower)
 	animationsIn = animationsIn or {}
 	animationsOut = animationsOut or {}
 
-	if (animationsIn.blur or animationsOut.blur) and follower and follower.label == "Word" then
-		return "Blur1"
-	end
-
 	return "TextMain"
 end
 
 return AnimOut
+
 end
 
 package.preload["EnvysTextAnimator.modules.generator"] = function(...)
@@ -1527,19 +1559,40 @@ function Generator.buildComp(textValue, state, asTitle)
 	local globalOut = Config.globalOutFrame(state.timelineFps, state.durationSeconds, animationSeconds)
 	local timing = Config.animationTiming(state.timelineFps, animationSeconds)
 	local hasAnimationOut = AnimOut.hasAny(animationsOut)
-	local usesWordMaskedBlur = follower.label == "Word" and (animations.blur or animations.fade or animationsOut.blur or animationsOut.fade)
-	local wordMaskTextInputs = ""
-	if usesWordMaskedBlur then
-		wordMaskTextInputs = [[
-						SelectElement = Input { Value = 4, },
-						ElementShape5 = Input { Value = 2, },
-						Level5 = Input { Value = 2, },
-						ExtendHorizontal5 = Input { Value = -0.151, },
-						Softness5 = Input { Value = 1, },
-						EffectMask = Input {
-							SourceOp = "BlurMaskText",
-							Source = "Output",
-						},]]
+	local usesWordMaskedBlur = false
+	local wordDelayValue = follower.wordDelay or 6
+	local followerDelayInputSourceOp = follower.wordByWord and "TextMain" or "Follower1"
+	local followerDelayInputSource = follower.wordByWord and "DelayWBW" or "Delay"
+	local followerDelayDefault = follower.wordByWord and wordDelayValue or follower.delay
+	local followerOrder = follower.order or 7
+	local followerDelayInput = ""
+	local wordDelayTextInput = ""
+	local textMainUserControls = ""
+	if not follower.wordByWord then
+		followerDelayInput = [[
+						Delay = Input { Value = ]] .. follower.delay .. [[, },]]
+	end
+	if follower.wordByWord then
+		wordDelayTextInput = [[
+						DelayWBW = Input { Value = ]] .. wordDelayValue .. [[, },]]
+		textMainUserControls = [[,
+					UserControls = ordered() {
+						DelayWBW = {
+							LINKS_Name = "Follower Delay",
+							LINKID_DataType = "Number",
+							INPID_InputControl = "ScrewControl",
+							INP_Default = ]] .. wordDelayValue .. [[,
+							INP_Integer = false,
+							INP_MinScale = 0,
+							INP_MaxScale = 30,
+							INP_MinAllowed = 0,
+							INP_MaxAllowed = 1000,
+							INP_SplineType = "Default",
+							LINKID_AddBeforeID = "StyledText",
+							ICS_ControlPage = "Controls",
+							INP_External = false
+						}
+					}]]
 	end
 	local followerInputs = AnimIn.followerInputs(animations, follower, usesWordMaskedBlur)
 	local animationTools = AnimIn.tools(animations, easingIn, follower, timing)
@@ -1600,7 +1653,7 @@ function Generator.buildComp(textValue, state, asTitle)
 				Input17 = InstanceInput { SourceOp = "TextMain", Source = "HorizontalJustificationCenter", Page = "Controls", Name = "H Anchor Center", ControlGroup = 4 },
 				Input18 = InstanceInput { SourceOp = "TextMain", Source = "HorizontalJustificationRight", Page = "Controls", Name = "H Anchor Right", ControlGroup = 4 },
 				Input19 = InstanceInput { SourceOp = "TextMain", Source = "HorizontalLeftCenterRight", Page = "Controls", Name = "Horizontal Anchor", Default = 0 },
-				Input20 = InstanceInput { SourceOp = "Follower1", Source = "Delay", Page = "Controls", Name = "Follower Delay", Default = ]] .. follower.delay .. [[ }
+				Input20 = InstanceInput { SourceOp = "]] .. followerDelayInputSourceOp .. [[", Source = "]] .. followerDelayInputSource .. [[", Page = "Controls", Name = "Follower Delay", Default = ]] .. followerDelayDefault .. [[ }
 			},
 			Outputs = {
 				MainOutput1 = InstanceOutput {
@@ -1619,7 +1672,7 @@ function Generator.buildComp(textValue, state, asTitle)
 						Height = Input { Value = 1080, },
 						UseFrameFormatSettings = Input { Value = 1, },
 						LineSpacing = Input { Value = 1, },
-						CharacterSpacing = Input { Value = 0.95, },]] .. wordMaskTextInputs .. [[
+						CharacterSpacing = Input { Value = 0.95, },]] .. wordDelayTextInput .. [[
 						StyledText = Input {
 							SourceOp = "Follower1",
 							Source = "StyledText",
@@ -1631,13 +1684,12 @@ function Generator.buildComp(textValue, state, asTitle)
 						VerticalJustificationNew = Input { Value = 3, },
 						HorizontalJustificationNew = Input { Value = 3, }
 					},
-					ViewInfo = OperatorInfo { Pos = { 110, 115.5 } },
+					ViewInfo = OperatorInfo { Pos = { 110, 115.5 } }]] .. textMainUserControls .. [[,
 				},
 				Follower1 = StyledTextFollower {
 					CtrlWZoom = false,
 					Inputs = {
-						Order = Input { Value = 7, },
-						Delay = Input { Value = ]] .. follower.delay .. [[, },
+						Order = Input { Value = ]] .. followerOrder .. [[, },]] .. followerDelayInput .. [[
 						Text = Input {
 							Value = StyledText {
 								Value = "]] .. escapedText .. [["
@@ -1674,6 +1726,7 @@ function Generator.buildComp(textValue, state, asTitle)
 end
 
 return Generator
+
 end
 
 package.preload["EnvysTextAnimator.modules.title_insert"] = function(...)
@@ -1682,18 +1735,120 @@ local Utils = require("EnvysTextAnimator.modules.utils")
 local Generator = require("EnvysTextAnimator.modules.generator")
 
 local TitleInsert = {}
+TitleInsert.lastError = nil
+TitleInsert.lastInfo = nil
+
+local function addDiagnostic(diagnostics, message)
+	table.insert(diagnostics, message)
+	print(message)
+end
+
+local function tryCall(label, fn, diagnostics)
+	local ok, result = pcall(fn)
+	if ok then
+		return result
+	end
+
+	addDiagnostic(diagnostics or {}, "Timeline diagnostic failed at " .. label .. ": " .. tostring(result))
+	return nil
+end
 
 function TitleInsert.getTimeline(resolve)
+	TitleInsert.lastError = nil
+	TitleInsert.lastInfo = nil
+	local diagnostics = {}
 	local projectManager = resolve:GetProjectManager()
 	local project = projectManager and projectManager:GetCurrentProject() or nil
 	if not project then
-		return nil, nil, "No Resolve project is currently open."
+		TitleInsert.lastError = "No Resolve project is currently open."
+		return nil, nil, TitleInsert.lastError
 	end
 
-	local timeline = project:GetCurrentTimeline()
-	if not timeline then
-		return nil, nil, "No current timeline is open."
+	local projectName = tryCall("GetName", function()
+		return project:GetName()
+	end, diagnostics) or "Unknown Project"
+	if projectName == "Untitled Project" then
+		TitleInsert.lastInfo = "Warning: Resolve reports Untitled Project. If your real project is open, restart Resolve. If it still reports Untitled Project, restart the PC."
+		addDiagnostic(diagnostics, TitleInsert.lastInfo)
 	end
+	local timelineCount = tonumber(tryCall("GetTimelineCount", function()
+		return project:GetTimelineCount()
+	end, diagnostics)) or 0
+	local timeline = tryCall("GetCurrentTimeline", function()
+		return project:GetCurrentTimeline()
+	end, diagnostics)
+
+	addDiagnostic(diagnostics, "Timeline check: Project=" .. tostring(projectName) .. ", Count=" .. tostring(timelineCount) .. ", Current=" .. tostring(timeline ~= nil))
+
+	if not timeline and timelineCount == 0 then
+		local mediaPool = tryCall("GetMediaPool", function()
+			return project:GetMediaPool()
+		end, diagnostics)
+		if mediaPool then
+			local rootFolder = tryCall("GetRootFolder", function()
+				return mediaPool:GetRootFolder()
+			end, diagnostics)
+			if rootFolder then
+				tryCall("SetCurrentFolder(root)", function()
+					return mediaPool:SetCurrentFolder(rootFolder)
+				end, diagnostics)
+			end
+
+			local timelineName = "Envy Text Animator Timeline " .. os.date("%H%M%S")
+			TitleInsert.lastInfo = "No active timeline found. Creating a new empty timeline."
+			addDiagnostic(diagnostics, "No timelines found. Creating empty timeline: " .. timelineName)
+			timeline = tryCall("CreateEmptyTimeline", function()
+				return mediaPool:CreateEmptyTimeline(timelineName)
+			end, diagnostics)
+			addDiagnostic(diagnostics, "CreateEmptyTimeline returned: " .. tostring(timeline ~= nil))
+			if timeline then
+				tryCall("SetCurrentTimeline after create", function()
+					return project:SetCurrentTimeline(timeline)
+				end, diagnostics)
+				timeline = tryCall("GetCurrentTimeline after create", function()
+					return project:GetCurrentTimeline()
+				end, diagnostics) or timeline
+				timelineCount = tonumber(tryCall("GetTimelineCount after create", function()
+					return project:GetTimelineCount()
+				end, diagnostics)) or 1
+				addDiagnostic(diagnostics, "Timeline after create: Count=" .. tostring(timelineCount) .. ", Current=" .. tostring(timeline ~= nil))
+			end
+		else
+			addDiagnostic(diagnostics, "GetMediaPool returned nil; cannot create a timeline.")
+		end
+	end
+
+	if not timeline then
+		addDiagnostic(diagnostics, "No current timeline reported. Project: " .. tostring(projectName) .. ". Timeline count: " .. tostring(timelineCount))
+
+		if timelineCount > 0 then
+			TitleInsert.lastInfo = "No active timeline found. Trying the first available timeline."
+			timeline = tryCall("GetTimelineByIndex(1)", function()
+				return project:GetTimelineByIndex(1)
+			end, diagnostics)
+			if timeline then
+				tryCall("SetCurrentTimeline", function()
+					return project:SetCurrentTimeline(timeline)
+				end, diagnostics)
+				timeline = tryCall("GetCurrentTimeline after fallback", function()
+					return project:GetCurrentTimeline()
+				end, diagnostics) or timeline
+			end
+		end
+	end
+
+	if not timeline then
+		TitleInsert.lastError = "No timeline found. Open or create a timeline and try again."
+		if projectName == "Untitled Project" then
+			TitleInsert.lastError = TitleInsert.lastError .. " Resolve reports Untitled Project; restart Resolve or the PC if your real project is already open."
+		end
+		return nil, nil, TitleInsert.lastError
+	end
+
+	local timelineName = tryCall("Timeline.GetName", function()
+		return timeline:GetName()
+	end, diagnostics) or "Current Timeline"
+	TitleInsert.lastInfo = (TitleInsert.lastInfo and (TitleInsert.lastInfo .. "\n") or "") .. "Project: " .. tostring(projectName) .. "\nTimeline: " .. tostring(timelineName)
 
 	return project, timeline, nil
 end
@@ -1725,25 +1880,99 @@ function TitleInsert.setClipDuration(project, timeline, item, durationSeconds, a
 	return durationFrames
 end
 
-function TitleInsert.tryInsertGeneratedTitle(timeline, compText)
-	Utils.ensureDir(Config.titleDir())
+local function itemKey(item)
+	local okStart, startFrame = pcall(function()
+		return item:GetStart()
+	end)
+	local okEnd, endFrame = pcall(function()
+		return item:GetEnd()
+	end)
+	local okName, name = pcall(function()
+		return item:GetName()
+	end)
 
-	if not Utils.writeAll(Config.titlePath(), compText) then
-		print("Could not write generated title: " .. Config.titlePath())
+	if not okStart or not okEnd then
 		return nil
 	end
 
+	return tostring(okName and name or "Unknown") .. "@" .. tostring(startFrame) .. "-" .. tostring(endFrame)
+end
+
+local function isTimelineItem(item)
+	return itemKey(item) ~= nil
+end
+
+local function timelineItemSnapshot(timeline)
+	local snapshot = {}
+	local okTracks, trackCount = pcall(function()
+		return timeline:GetTrackCount("video")
+	end)
+	trackCount = (okTracks and tonumber(trackCount)) or 0
+
+	for trackIndex = 1, trackCount do
+		local okItems, items = pcall(function()
+			return timeline:GetItemsInTrack("video", trackIndex)
+		end)
+		if okItems and type(items) == "table" then
+			for _, item in pairs(items) do
+				local key = itemKey(item)
+				if key then
+					snapshot[key] = item
+				end
+			end
+		end
+	end
+
+	return snapshot, trackCount
+end
+
+local function findNewTimelineItem(timeline, beforeSnapshot)
+	local afterSnapshot = timelineItemSnapshot(timeline)
+
+	for key, item in pairs(afterSnapshot) do
+		if not beforeSnapshot[key] then
+			return item, key
+		end
+	end
+
+	return nil, nil
+end
+
+function TitleInsert.tryInsertGeneratedTitle(timeline, compText)
+	TitleInsert.lastError = nil
+	Utils.ensureDir(Config.titleDir())
+
+	if not Utils.writeAll(Config.titlePath(), compText) then
+		TitleInsert.lastError = "Could not write generated title: " .. Config.titlePath()
+		print(TitleInsert.lastError)
+		return nil
+	end
+
+	local beforeSnapshot, trackCount = timelineItemSnapshot(timeline)
+	print("Insert diagnostic: video track count before insert = " .. tostring(trackCount))
+
 	local item = timeline:InsertFusionTitleIntoTimeline(Config.titleName)
-	if item then
+	if item and isTimelineItem(item) then
+		print("Insert diagnostic: InsertFusionTitleIntoTimeline returned TimelineItem " .. tostring(itemKey(item)))
 		return item
 	end
+	print("Insert diagnostic: InsertFusionTitleIntoTimeline returned " .. tostring(item))
 
 	item = timeline:InsertFusionTitleIntoTimeline(Config.titleName .. ".setting")
-	if item then
+	if item and isTimelineItem(item) then
+		print("Insert diagnostic: InsertFusionTitleIntoTimeline(.setting) returned TimelineItem " .. tostring(itemKey(item)))
 		return item
 	end
+	print("Insert diagnostic: InsertFusionTitleIntoTimeline(.setting) returned " .. tostring(item))
 
-	print("Generated title was written, but Resolve did not insert it. It may need a script/effects reload.")
+	local foundItem, foundKey = findNewTimelineItem(timeline, beforeSnapshot)
+	if foundItem then
+		print("Insert diagnostic: found new timeline item by track scan " .. tostring(foundKey))
+		return foundItem
+	end
+
+	TitleInsert.lastError = "Generated title was written, but no new TimelineItem appeared on video tracks. Resolve returned " .. tostring(item) .. ". It may need a script/effects reload, or the playhead/track target is not insertable."
+	print(TitleInsert.lastError)
 	return nil
 end
 
@@ -1776,6 +2005,7 @@ function TitleInsert.placeText(resolve, textValue, state)
 	local project, timeline, err = TitleInsert.getTimeline(resolve)
 	if err then
 		print(err)
+		TitleInsert.lastError = err
 		return false
 	end
 
@@ -1794,6 +2024,7 @@ function TitleInsert.placeText(resolve, textValue, state)
 	end
 
 	if not item then
+		TitleInsert.lastError = TitleInsert.lastError or "Could not insert generated text into the current timeline."
 		return false
 	end
 
@@ -1808,9 +2039,10 @@ function TitleInsert.placeText(resolve, textValue, state)
 end
 
 return TitleInsert
+
 end
 
--- Envy's Text Animator UI - beta 0.0.3.
+-- Envy's Text Animator UI - beta 0.0.4.
 -- This file owns UI state only. Animation generation stays in the modules.
 
 local function fileExists(path)
@@ -1850,7 +2082,7 @@ local function resolveScriptRoot()
 	end
 
 	addCandidate(os.getenv("ENVYS_TEXT_ANIMATOR_ROOT"))
-	addCandidate(scriptDir)
+		addCandidate(scriptDir)
 	addCandidate(dirname(scriptDir))
 
 	for _, candidate in ipairs(candidates) do
@@ -2294,9 +2526,44 @@ local config = {
 local debugLines = {}
 local debugLogVisible = true
 
+local function optionKeyByLabel(options, label)
+	if label == nil then
+		return nil
+	end
+
+	local text = tostring(label)
+	for _, item in ipairs(options) do
+		if item.label == text then
+			return item.key
+		end
+	end
+
+	return nil
+end
+
 local function optionKey(options, index, fallback)
-	local item = options[(tonumber(index) or 0) + 1]
+	local numericIndex = tonumber(index)
+	local item = nil
+
+	if numericIndex == 0 then
+		item = options[1]
+	elseif numericIndex and numericIndex >= 1 then
+		item = options[numericIndex]
+	end
+
 	return item and item.key or fallback
+end
+
+local function comboOptionKey(combo, options, fallback)
+	if combo then
+		local key = optionKeyByLabel(options, combo.CurrentText)
+			or optionKeyByLabel(options, combo.Text)
+		if key then
+			return key
+		end
+	end
+
+	return optionKey(options, combo and combo.CurrentIndex, fallback)
 end
 
 local function optionLabel(options, key)
@@ -2560,9 +2827,9 @@ local function readConfigFromUI(items)
 	end
 
 	config.text = text
-	config.textStyle.font = optionKey(fontOptions, items.FontCombo.CurrentIndex, Config.defaultFont)
-	config.textStyle.style = optionKey(fontStyleOptions, items.FontStyleCombo.CurrentIndex, Config.defaultFontStyle)
-	config.follower.mode = optionKey(followerOptions, items.FollowerCombo.CurrentIndex, "char")
+	config.textStyle.font = comboOptionKey(items.FontCombo, fontOptions, Config.defaultFont)
+	config.textStyle.style = comboOptionKey(items.FontStyleCombo, fontStyleOptions, Config.defaultFontStyle)
+	config.follower.mode = comboOptionKey(items.FollowerCombo, followerOptions, "char")
 	config.animationIn.fade = getChecked(items.AnimInFade)
 	config.animationIn.blur = getChecked(items.AnimInBlur)
 	config.animationIn.slide = getChecked(items.AnimInSlide)
@@ -2573,10 +2840,10 @@ local function readConfigFromUI(items)
 	config.animationOut.slide = getChecked(items.AnimOutSlide)
 	config.animationOut.scale = getChecked(items.AnimOutScale)
 	config.animationOut.rotate = getChecked(items.AnimOutRotate)
-	config.slideIn.direction = optionKey(slideDirectionOptions, items.SlideInDirectionCombo.CurrentIndex, "up")
-	config.slideOut.direction = optionKey(slideDirectionOptions, items.SlideOutDirectionCombo.CurrentIndex, "down")
-	config.easing.inType = optionKey(easingOptions, items.EasingInCombo.CurrentIndex, "default")
-	config.easing.outType = optionKey(easingOptions, items.EasingOutCombo.CurrentIndex, "default")
+	config.slideIn.direction = comboOptionKey(items.SlideInDirectionCombo, slideDirectionOptions, "up")
+	config.slideOut.direction = comboOptionKey(items.SlideOutDirectionCombo, slideDirectionOptions, "down")
+	config.easing.inType = comboOptionKey(items.EasingInCombo, easingOptions, "default")
+	config.easing.outType = comboOptionKey(items.EasingOutCombo, easingOptions, "default")
 	config.animationLengthSeconds = Config.clampAnimationSeconds(numberFromText(getText(items.AnimationLengthInput), Config.defaultAnimationSeconds))
 	setAnimationLengthText(items, config.animationLengthSeconds)
 	setAnimationLengthSlider(items, config.animationLengthSeconds)
@@ -2822,8 +3089,8 @@ setChecked(items.AnimOutScale, config.animationOut.scale)
 setChecked(items.AnimOutRotate, config.animationOut.rotate)
 
 appendLog(items, "INFO", "UI loaded")
+appendLog(items, "INFO", "Build: " .. Config.version)
 appendLog(items, "INFO", "Loaded fonts: " .. tostring(#fontOptions))
-logCurrentConfig(items)
 
 function win.On.EnvysTextAnimatorWindow.Close(ev)
 	dispatcher:ExitLoop()
@@ -2836,7 +3103,7 @@ end
 
 function win.On.FontCombo.CurrentIndexChanged(ev)
 	local previousStyle = config.textStyle.style
-	config.textStyle.font = optionKey(fontOptions, items.FontCombo.CurrentIndex, Config.defaultFont)
+	config.textStyle.font = comboOptionKey(items.FontCombo, fontOptions, Config.defaultFont)
 	refreshFontStyleOptions(items, config.textStyle.font, previousStyle)
 	readConfigFromUI(items)
 	appendLog(items, "INFO", "Font: " .. config.textStyle.font .. " / " .. config.textStyle.style)
@@ -2945,10 +3212,15 @@ function win.On.GenerateText.Clicked(ev)
 	end
 
 	if placed then
+		if TitleInsert.lastInfo then
+			for line in tostring(TitleInsert.lastInfo):gmatch("[^\n]+") do
+				appendLog(items, line:match("^Warning:") and "WARN" or "INFO", line)
+			end
+		end
 		appendLog(items, "INFO", "Text generated successfully")
 		dispatcher:ExitLoop()
 	else
-		appendLog(items, "ERROR", "Failed to create TextPlus")
+		appendLog(items, "ERROR", TitleInsert.lastError or "Failed to create TextPlus")
 	end
 end
 

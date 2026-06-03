@@ -1,8 +1,8 @@
 If pushing manually, run these commands from this folder:
 
-git init
 git add .
-git commit -m "beta 0.0.3 branded UI redesign"
+git commit -m "Release beta 0.0.4 word engine upgrade"
+git push origin main
 
 Suggested repository name:
 envys-text-animator

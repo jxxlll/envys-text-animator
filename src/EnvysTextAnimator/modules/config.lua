@@ -1,8 +1,8 @@
-﻿local Config = {}
+local Config = {}
 
 Config.titleName = "Envys Text Animator Generated"
 Config.appName = "Envy's Text Animator"
-Config.version = "beta 0.0.3"
+Config.version = "beta 0.0.4"
 Config.defaultText = "Your Text Here"
 Config.defaultFont = "Open Sans"
 Config.defaultFontStyle = "Regular"
@@ -86,4 +86,3 @@ function Config.tempCompPath()
 end
 
 return Config
-

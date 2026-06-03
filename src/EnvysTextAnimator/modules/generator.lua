@@ -1,4 +1,4 @@
-﻿local Config = require("EnvysTextAnimator.modules.config")
+local Config = require("EnvysTextAnimator.modules.config")
 local Utils = require("EnvysTextAnimator.modules.utils")
 local Followers = require("EnvysTextAnimator.modules.followers")
 local AnimIn = require("EnvysTextAnimator.modules.animations_in")
@@ -20,19 +20,40 @@ function Generator.buildComp(textValue, state, asTitle)
 	local globalOut = Config.globalOutFrame(state.timelineFps, state.durationSeconds, animationSeconds)
 	local timing = Config.animationTiming(state.timelineFps, animationSeconds)
 	local hasAnimationOut = AnimOut.hasAny(animationsOut)
-	local usesWordMaskedBlur = follower.label == "Word" and (animations.blur or animations.fade or animationsOut.blur or animationsOut.fade)
-	local wordMaskTextInputs = ""
-	if usesWordMaskedBlur then
-		wordMaskTextInputs = [[
-						SelectElement = Input { Value = 4, },
-						ElementShape5 = Input { Value = 2, },
-						Level5 = Input { Value = 2, },
-						ExtendHorizontal5 = Input { Value = -0.151, },
-						Softness5 = Input { Value = 1, },
-						EffectMask = Input {
-							SourceOp = "BlurMaskText",
-							Source = "Output",
-						},]]
+	local usesWordMaskedBlur = false
+	local wordDelayValue = follower.wordDelay or 6
+	local followerDelayInputSourceOp = follower.wordByWord and "TextMain" or "Follower1"
+	local followerDelayInputSource = follower.wordByWord and "DelayWBW" or "Delay"
+	local followerDelayDefault = follower.wordByWord and wordDelayValue or follower.delay
+	local followerOrder = follower.order or 7
+	local followerDelayInput = ""
+	local wordDelayTextInput = ""
+	local textMainUserControls = ""
+	if not follower.wordByWord then
+		followerDelayInput = [[
+						Delay = Input { Value = ]] .. follower.delay .. [[, },]]
+	end
+	if follower.wordByWord then
+		wordDelayTextInput = [[
+						DelayWBW = Input { Value = ]] .. wordDelayValue .. [[, },]]
+		textMainUserControls = [[,
+					UserControls = ordered() {
+						DelayWBW = {
+							LINKS_Name = "Follower Delay",
+							LINKID_DataType = "Number",
+							INPID_InputControl = "ScrewControl",
+							INP_Default = ]] .. wordDelayValue .. [[,
+							INP_Integer = false,
+							INP_MinScale = 0,
+							INP_MaxScale = 30,
+							INP_MinAllowed = 0,
+							INP_MaxAllowed = 1000,
+							INP_SplineType = "Default",
+							LINKID_AddBeforeID = "StyledText",
+							ICS_ControlPage = "Controls",
+							INP_External = false
+						}
+					}]]
 	end
 	local followerInputs = AnimIn.followerInputs(animations, follower, usesWordMaskedBlur)
 	local animationTools = AnimIn.tools(animations, easingIn, follower, timing)
@@ -93,7 +114,7 @@ function Generator.buildComp(textValue, state, asTitle)
 				Input17 = InstanceInput { SourceOp = "TextMain", Source = "HorizontalJustificationCenter", Page = "Controls", Name = "H Anchor Center", ControlGroup = 4 },
 				Input18 = InstanceInput { SourceOp = "TextMain", Source = "HorizontalJustificationRight", Page = "Controls", Name = "H Anchor Right", ControlGroup = 4 },
 				Input19 = InstanceInput { SourceOp = "TextMain", Source = "HorizontalLeftCenterRight", Page = "Controls", Name = "Horizontal Anchor", Default = 0 },
-				Input20 = InstanceInput { SourceOp = "Follower1", Source = "Delay", Page = "Controls", Name = "Follower Delay", Default = ]] .. follower.delay .. [[ }
+				Input20 = InstanceInput { SourceOp = "]] .. followerDelayInputSourceOp .. [[", Source = "]] .. followerDelayInputSource .. [[", Page = "Controls", Name = "Follower Delay", Default = ]] .. followerDelayDefault .. [[ }
 			},
 			Outputs = {
 				MainOutput1 = InstanceOutput {
@@ -112,7 +133,7 @@ function Generator.buildComp(textValue, state, asTitle)
 						Height = Input { Value = 1080, },
 						UseFrameFormatSettings = Input { Value = 1, },
 						LineSpacing = Input { Value = 1, },
-						CharacterSpacing = Input { Value = 0.95, },]] .. wordMaskTextInputs .. [[
+						CharacterSpacing = Input { Value = 0.95, },]] .. wordDelayTextInput .. [[
 						StyledText = Input {
 							SourceOp = "Follower1",
 							Source = "StyledText",
@@ -124,13 +145,12 @@ function Generator.buildComp(textValue, state, asTitle)
 						VerticalJustificationNew = Input { Value = 3, },
 						HorizontalJustificationNew = Input { Value = 3, }
 					},
-					ViewInfo = OperatorInfo { Pos = { 110, 115.5 } },
+					ViewInfo = OperatorInfo { Pos = { 110, 115.5 } }]] .. textMainUserControls .. [[,
 				},
 				Follower1 = StyledTextFollower {
 					CtrlWZoom = false,
 					Inputs = {
-						Order = Input { Value = 7, },
-						Delay = Input { Value = ]] .. follower.delay .. [[, },
+						Order = Input { Value = ]] .. followerOrder .. [[, },]] .. followerDelayInput .. [[
 						Text = Input {
 							Value = StyledText {
 								Value = "]] .. escapedText .. [["
@@ -167,4 +187,3 @@ function Generator.buildComp(textValue, state, asTitle)
 end
 
 return Generator
-

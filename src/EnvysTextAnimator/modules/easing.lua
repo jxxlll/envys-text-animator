@@ -1,4 +1,4 @@
-﻿local Easing = {}
+local Easing = {}
 
 Easing.order = {
 	{ key = "setting", label = "Default" },
@@ -217,4 +217,3 @@ function Easing.transition(startFrame, endFrame, startValue, endValue, key, reve
 end
 
 return Easing
-

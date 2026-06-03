@@ -1,4 +1,4 @@
-﻿local Followers = {}
+local Followers = {}
 
 Followers.labels = {
 	char = "Character",
@@ -7,9 +7,9 @@ Followers.labels = {
 }
 
 Followers.byKey = {
-	char = { label = "Character", offset = "CharacterOffset", angle = "CharacterAngleZ", sizeX = "CharacterSizeX", sizeY = "CharacterSizeY", delay = 0.6 },
-	word = { label = "Word", offset = "WordOffset", angle = "WordAngleZ", sizeX = "WordSizeX", sizeY = "WordSizeY", delay = 0.6 },
-	line = { label = "Line", offset = "LineOffset", angle = "LineAngleZ", sizeX = "LineSizeX", sizeY = "LineSizeY", delay = 0 },
+	char = { label = "Character", offset = "CharacterOffset", angle = "CharacterAngleZ", sizeX = "CharacterSizeX", sizeY = "CharacterSizeY", order = 7, delay = 0.6 },
+	word = { label = "Word", offset = "CharacterOffset", angle = "CharacterAngleZ", sizeX = "CharacterSizeX", sizeY = "CharacterSizeY", order = 6, delay = 0, wordDelay = 6, wordByWord = true },
+	line = { label = "Line", offset = "LineOffset", angle = "LineAngleZ", sizeX = "LineSizeX", sizeY = "LineSizeY", order = 7, delay = 0 },
 }
 
 function Followers.get(key)
@@ -21,4 +21,3 @@ function Followers.label(key)
 end
 
 return Followers
-

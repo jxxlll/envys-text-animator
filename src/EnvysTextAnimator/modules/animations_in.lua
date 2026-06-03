@@ -1,4 +1,4 @@
-﻿local Easing = require("EnvysTextAnimator.modules.easing")
+local Easing = require("EnvysTextAnimator.modules.easing")
 
 local AnimIn = {}
 
@@ -103,12 +103,29 @@ function AnimIn.slidePoints(animations)
 end
 
 local function usesWordMaskedBlur(animations, follower)
-	return follower and follower.label == "Word" and animations and (animations.blur or animations.fade)
+	return false
+end
+
+local function wordDelayInput(follower)
+	if not (follower and follower.wordByWord) then
+		return ""
+	end
+
+	return [[
+						DelayByCharacterPosition = Input {
+							Value = 30,
+							Expression = ":\nlocal d=TextMain.DelayWBW\nlocal s=tostring(self.Text.Value or \"\")\nlocal p=math.floor(time+1)\n\nlocal w=0\nlocal inw=false\nlocal i=0\n\nfor c in s:gmatch(\"[%z\\1-\\127\\194-\\244][\\128-\\191]*\") do\n\ti=i+1\n\tif c:match(\"%s\") then\n\t\tinw=false\n\telseif not inw then\n\t\tw=w+1\n\t\tinw=true\n\tend\n\tif i>=p then break end\nend\n\nreturn (w-1)*d",
+						},]]
 end
 
 function AnimIn.followerInputs(animations, follower, forceWordMaskedBlur)
 	local inputs = {}
 	local maskedBlur = forceWordMaskedBlur or usesWordMaskedBlur(animations, follower)
+
+	local delayInput = wordDelayInput(follower)
+	if delayInput ~= "" then
+		table.insert(inputs, delayInput)
+	end
 
 	if AnimIn.anySlideEnabled(animations) or maskedBlur then
 		table.insert(inputs, [[
@@ -405,12 +422,7 @@ function AnimIn.blurTool(animations, follower, timing)
 end
 
 function AnimIn.outputSource(animations, follower)
-	if animations.blur and follower and follower.label == "Word" then
-		return "Blur1"
-	end
-
 	return "TextMain"
 end
 
 return AnimIn
-

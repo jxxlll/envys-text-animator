@@ -21,6 +21,26 @@ modules\utils.lua
 
 
 ================================================================================
+BETA 0.0.4 - WORD ENGINE UPGRADE
+================================================================================
+
+Status:
+- Confirmed working smoothly after local Resolve testing.
+- Word mode now uses the WBW delay-expression method.
+
+Changes:
+- Replaced the heavy word masked blur branch with a DelayByCharacterPosition
+  word-by-word engine.
+- Word mode now groups characters by word while keeping the lighter Text+
+  soften blur method.
+- Fade, blur, slide, rotate, scale, and soften all obey the same word delay.
+- Word mode uses the WBW-style follower order and removes the normal follower
+  delay input so the expression drives timing cleanly.
+- Character and Line modes remain unchanged.
+- Added Special Thanks credit for SuperCut, creator of the WBW Engine.
+
+
+================================================================================
 BETA 0.0.3 - BRANDED UI REDESIGN
 ================================================================================
 
@@ -508,7 +528,6 @@ beta 0.0.2a
 - Kept custom animation length and FPS-aware timing work from 0.0.2.
 
 beta 0.0.3
-- Current checkpoint.
 - Confirmed clean 24fps and 60fps timing behavior.
 - Stabilized the default 5-second source model:
   - SourceStart = 0
@@ -519,6 +538,12 @@ beta 0.0.3
 - Added branded creator-tool UI redesign.
 - Added collapsible debug log.
 - Made Place Text a larger mint-colored primary CTA.
+
+beta 0.0.4
+- Current checkpoint.
+- Replaced the old heavy word masked blur path with the WBW expression engine.
+- Word mode now keeps the lighter soften blur approach.
+- Confirmed smooth local Resolve testing after the WBW update.
 
 
 ================================================================================
@@ -618,7 +643,7 @@ SUMMARY
 ================================================================================
 
 Envy's Text Animator is currently a working modular Lua tool for DaVinci Resolve.
-The current beta 0.0.3 can generate editable Fusion Titles from a UI, with
+The current beta 0.0.4 can generate editable Fusion Titles from a UI, with
 stackable animation in/out options, follower modes, slide directions, easing
 choices, and custom animation length.
 

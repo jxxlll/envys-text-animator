@@ -1,4 +1,4 @@
-﻿local Utils = {}
+local Utils = {}
 
 function Utils.writeAll(path, value)
 	local file = io.open(path, "wb")
@@ -25,4 +25,3 @@ function Utils.ensureDir(path)
 end
 
 return Utils
-

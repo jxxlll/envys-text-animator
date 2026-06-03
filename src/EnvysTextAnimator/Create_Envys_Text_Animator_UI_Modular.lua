@@ -1,4 +1,4 @@
-﻿-- Envy's Text Animator UI - beta 0.0.3.
+-- Envy's Text Animator UI - beta 0.0.4.
 -- This file owns UI state only. Animation generation stays in the modules.
 
 local function fileExists(path)
@@ -38,7 +38,7 @@ local function resolveScriptRoot()
 	end
 
 	addCandidate(os.getenv("ENVYS_TEXT_ANIMATOR_ROOT"))
-	addCandidate(scriptDir)
+		addCandidate(scriptDir)
 	addCandidate(dirname(scriptDir))
 
 	for _, candidate in ipairs(candidates) do
@@ -482,9 +482,44 @@ local config = {
 local debugLines = {}
 local debugLogVisible = true
 
+local function optionKeyByLabel(options, label)
+	if label == nil then
+		return nil
+	end
+
+	local text = tostring(label)
+	for _, item in ipairs(options) do
+		if item.label == text then
+			return item.key
+		end
+	end
+
+	return nil
+end
+
 local function optionKey(options, index, fallback)
-	local item = options[(tonumber(index) or 0) + 1]
+	local numericIndex = tonumber(index)
+	local item = nil
+
+	if numericIndex == 0 then
+		item = options[1]
+	elseif numericIndex and numericIndex >= 1 then
+		item = options[numericIndex]
+	end
+
 	return item and item.key or fallback
+end
+
+local function comboOptionKey(combo, options, fallback)
+	if combo then
+		local key = optionKeyByLabel(options, combo.CurrentText)
+			or optionKeyByLabel(options, combo.Text)
+		if key then
+			return key
+		end
+	end
+
+	return optionKey(options, combo and combo.CurrentIndex, fallback)
 end
 
 local function optionLabel(options, key)
@@ -748,9 +783,9 @@ local function readConfigFromUI(items)
 	end
 
 	config.text = text
-	config.textStyle.font = optionKey(fontOptions, items.FontCombo.CurrentIndex, Config.defaultFont)
-	config.textStyle.style = optionKey(fontStyleOptions, items.FontStyleCombo.CurrentIndex, Config.defaultFontStyle)
-	config.follower.mode = optionKey(followerOptions, items.FollowerCombo.CurrentIndex, "char")
+	config.textStyle.font = comboOptionKey(items.FontCombo, fontOptions, Config.defaultFont)
+	config.textStyle.style = comboOptionKey(items.FontStyleCombo, fontStyleOptions, Config.defaultFontStyle)
+	config.follower.mode = comboOptionKey(items.FollowerCombo, followerOptions, "char")
 	config.animationIn.fade = getChecked(items.AnimInFade)
 	config.animationIn.blur = getChecked(items.AnimInBlur)
 	config.animationIn.slide = getChecked(items.AnimInSlide)
@@ -761,10 +796,10 @@ local function readConfigFromUI(items)
 	config.animationOut.slide = getChecked(items.AnimOutSlide)
 	config.animationOut.scale = getChecked(items.AnimOutScale)
 	config.animationOut.rotate = getChecked(items.AnimOutRotate)
-	config.slideIn.direction = optionKey(slideDirectionOptions, items.SlideInDirectionCombo.CurrentIndex, "up")
-	config.slideOut.direction = optionKey(slideDirectionOptions, items.SlideOutDirectionCombo.CurrentIndex, "down")
-	config.easing.inType = optionKey(easingOptions, items.EasingInCombo.CurrentIndex, "default")
-	config.easing.outType = optionKey(easingOptions, items.EasingOutCombo.CurrentIndex, "default")
+	config.slideIn.direction = comboOptionKey(items.SlideInDirectionCombo, slideDirectionOptions, "up")
+	config.slideOut.direction = comboOptionKey(items.SlideOutDirectionCombo, slideDirectionOptions, "down")
+	config.easing.inType = comboOptionKey(items.EasingInCombo, easingOptions, "default")
+	config.easing.outType = comboOptionKey(items.EasingOutCombo, easingOptions, "default")
 	config.animationLengthSeconds = Config.clampAnimationSeconds(numberFromText(getText(items.AnimationLengthInput), Config.defaultAnimationSeconds))
 	setAnimationLengthText(items, config.animationLengthSeconds)
 	setAnimationLengthSlider(items, config.animationLengthSeconds)
@@ -1010,8 +1045,8 @@ setChecked(items.AnimOutScale, config.animationOut.scale)
 setChecked(items.AnimOutRotate, config.animationOut.rotate)
 
 appendLog(items, "INFO", "UI loaded")
+appendLog(items, "INFO", "Build: " .. Config.version)
 appendLog(items, "INFO", "Loaded fonts: " .. tostring(#fontOptions))
-logCurrentConfig(items)
 
 function win.On.EnvysTextAnimatorWindow.Close(ev)
 	dispatcher:ExitLoop()
@@ -1024,7 +1059,7 @@ end
 
 function win.On.FontCombo.CurrentIndexChanged(ev)
 	local previousStyle = config.textStyle.style
-	config.textStyle.font = optionKey(fontOptions, items.FontCombo.CurrentIndex, Config.defaultFont)
+	config.textStyle.font = comboOptionKey(items.FontCombo, fontOptions, Config.defaultFont)
 	refreshFontStyleOptions(items, config.textStyle.font, previousStyle)
 	readConfigFromUI(items)
 	appendLog(items, "INFO", "Font: " .. config.textStyle.font .. " / " .. config.textStyle.style)
@@ -1133,14 +1168,18 @@ function win.On.GenerateText.Clicked(ev)
 	end
 
 	if placed then
+		if TitleInsert.lastInfo then
+			for line in tostring(TitleInsert.lastInfo):gmatch("[^\n]+") do
+				appendLog(items, line:match("^Warning:") and "WARN" or "INFO", line)
+			end
+		end
 		appendLog(items, "INFO", "Text generated successfully")
 		dispatcher:ExitLoop()
 	else
-		appendLog(items, "ERROR", "Failed to create TextPlus")
+		appendLog(items, "ERROR", TitleInsert.lastError or "Failed to create TextPlus")
 	end
 end
 
 win:Show()
 dispatcher:RunLoop()
 win:Hide()
-
