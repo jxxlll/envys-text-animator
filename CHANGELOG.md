@@ -1,13 +1,13 @@
 Envy's Text Animator - Development Changelog
-Current checkpoint: beta 0.0.3
-Last updated: 2026-06-02
+Current checkpoint: beta 0.0.4
+Last updated: 2026-06-03
 
-Project location:
-C:\Users\JULI\Documents\echnologia\EchnoTextAnimator
+Project folder:
+src/EnvysTextAnimator
 
 Current Resolve launcher files:
-Create_Echno_Text_Animator_UI_Modular.lua
 Envys_Text_Animator.lua
+Create_Envys_Text_Animator_UI_Modular.lua
 
 Current main modules:
 modules\config.lua
@@ -26,7 +26,7 @@ BETA 0.0.3 - BRANDED UI REDESIGN
 
 Status:
 - Confirmed working in 24fps and 60fps projects before the UI redesign pass.
-- Marked as the current golden checkpoint.
+- Marked as the current stable beta checkpoint.
 
 Timing model stabilized:
 - Kept Resolve's generated title clip at the default 5-second source duration.
@@ -400,7 +400,7 @@ Project name changed to:
 
 Logo:
 - Loaded from:
-  C:\Users\JULI\Documents\echnologia\assets\Envystalogo.png
+  assets/Envystalogo.png
 
 Changes made:
 - Added logo to UI.
@@ -471,7 +471,7 @@ Decision:
 VERSION CHECKPOINTS
 ================================================================================
 
-GOLDEN_WORKING_EchnoTextAnimator_20260529
+Early Modular Checkpoint
 - First reliable modular checkpoint.
 - Working title insertion path.
 - Used as the main recovery point after fragile experiments.
@@ -522,24 +522,12 @@ beta 0.0.3
 
 
 ================================================================================
-IMPORTANT BACKUPS
+RELEASE NOTES
 ================================================================================
 
-Golden backup:
-C:\Users\JULI\Documents\echnologia\backups\GOLDEN_WORKING_EchnoTextAnimator_20260529
-
-Current checkpoint:
-C:\Users\JULI\Documents\echnologia\backups\GOLDEN_BETA_0.0.3_20260602
-
-Other useful recent backups:
-C:\Users\JULI\Documents\echnologia\backups\BETA_0.0.2_20260531
-C:\Users\JULI\Documents\echnologia\backups\BEFORE_0.0.2_ROOT_FIX_20260531
-C:\Users\JULI\Documents\echnologia\backups\BEFORE_FPS_AWARE_TIMING_UI_20260531
-C:\Users\JULI\Documents\echnologia\backups\BEFORE_CUSTOM_ANIMATION_LENGTH_ENGINE_20260531
-C:\Users\JULI\Documents\echnologia\backups\BEFORE_ANIMATION_LENGTH_SLIDER_20260531
-C:\Users\JULI\Documents\echnologia\backups\BEFORE_APPEND_TIMELINE_INSERT_EXPERIMENT_20260531
-C:\Users\JULI\Documents\echnologia\backups\BEFORE_RESTORE_FUSION_TITLE_INSERT_20260531
-C:\Users\JULI\Documents\echnologia\backups\BEFORE_TEXT_PLACEHOLDER_UI_20260531
+Local development backup paths are intentionally excluded from the public
+changelog. Release checkpoints should be represented by Git commits, tags, and
+packaged builds in `dist/`.
 
 
 ================================================================================
@@ -564,26 +552,65 @@ CURRENT KNOWN ISSUES
 PLANNED ROADMAP
 ================================================================================
 
-0.0.2b - Timeline Safety + Debug Cleanup
-- Auto-protect occupied lower video tracks during placement, then restore locks.
-- Add version/build debug line.
-- Add detected FPS debug line.
-- Add animation length debug line.
-- Log generated timing frames.
-- Remove dead MediaPool append experiment code if fully unused.
-- Keep raw comp fallback only for emergency fallback.
+0.0.4a - WBW Stabilization
+- Confirm Word mode across Fade, Blur, Slide, Rotate, Scale.
+- Confirm Word In + Out together.
+- Confirm Character and Line modes unaffected.
+- Clean old unreachable masked blur code.
+- Update README/changelog with SuperCut WBW credit.
+- Optional: debug line showing active follower engine.
 
-0.1.0 - Feature Drop
+0.0.4b - Inspector Fine Controls
+- Add Animation Strength to Edit page inspector.
+- Slide distance, rotate angle, scale amount, and soften blur respond to strength.
+- Decide fade strength behavior.
+- Keep main UI unchanged.
+
+0.0.5 - Preset Cleanup
+- Clean generated node tree naming.
+- Remove dead experimental insert/timing code.
+- Package cleaner public build.
+- Update public repo dist.
+- Add clearer install/test notes.
+
+0.1.0 - Presets Feature Drop
 - Preset save/load system.
-- Recent animations list.
-- Custom Bezier editor.
+- Recent animation recipes.
+- Starter preset buttons: Clean Pop, Soft Blur, Kinetic Slide.
+
+0.1.1 - Controls Expansion
+- Separated text adjustment controls panel.
+- Separated animation controls panel.
+- Keep layout clean with collapsible sections.
+
+0.1.2 - Character Level Styling
+- Per-character color control.
+- Per-character size control.
+- Accent every Nth unit.
+- Touches generator + follower engine, so test heavily.
 
 0.2.0 - Release Candidate
-- Final UI polish.
-- Install guide / README.
-- Gumroad listing, Pay What You Want.
+- Final UI polish with new logo.
+- README + install guide polish.
 - 30 second demo video.
-- Post on Resolve forum and Reddit.
+- Ko-fi / Gumroad PWYW page.
+- Resolve forum + Reddit post.
+- GitHub release tag v0.2.0.
+
+Future / Post-Release
+
+0.3.0 - Journey Channel Prep
+- Record devlog episodes retroactively.
+- Ep1: building a Resolve plugin with no coding experience.
+- Ep2: designing a graphic pack for $0.
+- Ep3: first GitHub push.
+- Ep4: competing with a $35 plugin.
+
+1.0.0 - Stable Release
+- Custom Bezier editor.
+- Animation preview inside UI.
+- Full documentation.
+- Multi-language support: EN + ID.
 
 
 ================================================================================

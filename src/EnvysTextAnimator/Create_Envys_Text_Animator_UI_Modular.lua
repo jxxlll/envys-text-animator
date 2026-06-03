@@ -38,7 +38,6 @@ local function resolveScriptRoot()
 	end
 
 	addCandidate(os.getenv("ENVYS_TEXT_ANIMATOR_ROOT"))
-	addCandidate(os.getenv("USERPROFILE") and (os.getenv("USERPROFILE") .. "\\Documents\\echnologia") or nil)
 	addCandidate(scriptDir)
 	addCandidate(dirname(scriptDir))
 

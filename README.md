@@ -22,6 +22,10 @@ Optional: copy `assets/Envystalogo.png` into an `assets` folder beside the Lua f
 
 DaVinci Resolve with Fusion Lua scripting support. Resolve/Fusion 17 or newer is recommended. This beta is currently tested on the developer's Resolve setup and is released as `beta 0.0.3`.
 
+## Special Thanks
+
+Special thanks to SuperCut, creator of the WBW Engine, for the word-by-word animation method that inspired the upgraded word follower logic.
+
 ## License
 
 MIT. Use it, modify it, share it, just keep the copyright/license notice.
