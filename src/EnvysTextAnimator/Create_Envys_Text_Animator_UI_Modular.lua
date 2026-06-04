@@ -1,4 +1,4 @@
--- Envy's Text Animator UI - beta 0.0.4.
+-- Envy's Text Animator UI - beta 0.0.4a.
 -- This file owns UI state only. Animation generation stays in the modules.
 
 local function fileExists(path)
@@ -542,6 +542,14 @@ local function easingEngineKey(key)
 	return "setting"
 end
 
+local function followerEngineLabel(mode)
+	if mode == "word" then
+		return "Word WBW"
+	end
+
+	return optionLabel(followerOptions, mode)
+end
+
 local function bool(value)
 	return value == true or value == 1
 end
@@ -810,6 +818,7 @@ end
 local function logCurrentConfig(items)
 	appendLog(items, "INFO", "Font: " .. config.textStyle.font .. " / " .. config.textStyle.style)
 	appendLog(items, "INFO", "Selected follower: " .. optionLabel(followerOptions, config.follower.mode))
+	appendLog(items, "INFO", "Follower engine: " .. followerEngineLabel(config.follower.mode))
 	appendLog(items, "INFO", "Animation In: " .. selectedAnimations(config.animationIn))
 	appendLog(items, "INFO", "Animation Out: " .. selectedAnimations(config.animationOut))
 	appendLog(items, "INFO", "Slide In direction: " .. optionLabel(slideDirectionOptions, config.slideIn.direction))

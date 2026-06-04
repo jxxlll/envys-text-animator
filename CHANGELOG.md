@@ -1,6 +1,6 @@
 Envy's Text Animator - Development Changelog
-Current checkpoint: beta 0.0.4
-Last updated: 2026-06-03
+Current checkpoint: beta 0.0.4a
+Last updated: 2026-06-04
 
 Project folder:
 src/EnvysTextAnimator
@@ -18,6 +18,22 @@ modules\followers.lua
 modules\easing.lua
 modules\title_insert.lua
 modules\utils.lua
+
+
+================================================================================
+BETA 0.0.4a - WBW STABILIZATION
+================================================================================
+
+Status:
+- Confirmed ready after the 0.0.4 WBW engine passed local Resolve testing.
+
+Changes:
+- Removed old unreachable masked blur code from the active animation modules.
+- Kept Word mode on the WBW DelayByCharacterPosition engine.
+- Kept Character and Line follower behavior unchanged.
+- Added a debug log line showing the active follower engine: Character, Word
+  WBW, or Line.
+- Rebuilt the public `dist/Envys_Text_Animator.lua` launcher.
 
 
 ================================================================================
@@ -540,10 +556,14 @@ beta 0.0.3
 - Made Place Text a larger mint-colored primary CTA.
 
 beta 0.0.4
-- Current checkpoint.
 - Replaced the old heavy word masked blur path with the WBW expression engine.
 - Word mode now keeps the lighter soften blur approach.
 - Confirmed smooth local Resolve testing after the WBW update.
+
+beta 0.0.4a
+- Current checkpoint.
+- Removed old unreachable masked blur code.
+- Added active follower engine debug logging.
 
 
 ================================================================================
@@ -643,7 +663,7 @@ SUMMARY
 ================================================================================
 
 Envy's Text Animator is currently a working modular Lua tool for DaVinci Resolve.
-The current beta 0.0.4 can generate editable Fusion Titles from a UI, with
+The current beta 0.0.4a can generate editable Fusion Titles from a UI, with
 stackable animation in/out options, follower modes, slide directions, easing
 choices, and custom animation length.
 

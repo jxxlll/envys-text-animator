@@ -102,10 +102,6 @@ function AnimIn.slidePoints(animations)
 	return "{ Linear = true, LockY = true, X = -0.5, Y = -0.532, RX = 0, RY = 0.0106666666666667 },\n\t\t\t\t\t\t\t\t\t{ Linear = true, LockY = true, X = -0.5, Y = -0.5, LX = 0, LY = -0.0106666666666667 }"
 end
 
-local function usesWordMaskedBlur(animations, follower)
-	return false
-end
-
 local function wordDelayInput(follower)
 	if not (follower and follower.wordByWord) then
 		return ""
@@ -118,16 +114,15 @@ local function wordDelayInput(follower)
 						},]]
 end
 
-function AnimIn.followerInputs(animations, follower, forceWordMaskedBlur)
+function AnimIn.followerInputs(animations, follower)
 	local inputs = {}
-	local maskedBlur = forceWordMaskedBlur or usesWordMaskedBlur(animations, follower)
 
 	local delayInput = wordDelayInput(follower)
 	if delayInput ~= "" then
 		table.insert(inputs, delayInput)
 	end
 
-	if AnimIn.anySlideEnabled(animations) or maskedBlur then
+	if AnimIn.anySlideEnabled(animations) then
 		table.insert(inputs, [[
 						]] .. follower.offset .. [[ = Input {
 							SourceOp = "Path1",
@@ -159,7 +154,7 @@ function AnimIn.followerInputs(animations, follower, forceWordMaskedBlur)
 						},]])
 	end
 
-	if animations.fade and not maskedBlur then
+	if animations.fade then
 		table.insert(inputs, [[
 						Opacity1 = Input {
 							SourceOp = "OpacityCurve",
@@ -167,7 +162,7 @@ function AnimIn.followerInputs(animations, follower, forceWordMaskedBlur)
 						},]])
 	end
 
-	if animations.blur and not maskedBlur then
+	if animations.blur then
 		table.insert(inputs, [[
 						SoftnessX1 = Input {
 							SourceOp = "BlurSoftnessXCurve",
@@ -180,18 +175,6 @@ function AnimIn.followerInputs(animations, follower, forceWordMaskedBlur)
 						SoftnessOnFillColorToo1 = Input { Value = 1, },]])
 	end
 
-	if maskedBlur then
-		table.insert(inputs, [[
-						SelectElement = Input { Value = 4, },
-						Enabled1 = Input { Value = 0, },
-						Enabled5 = Input { Value = 1, },
-						Opacity5 = Input {
-							SourceOp = "Follower1Opacity5",
-							Source = "Value",
-						},
-						ElementShape5 = Input { Value = 2, },]])
-	end
-
 	return table.concat(inputs, "\n")
 end
 
@@ -202,11 +185,10 @@ end
 function AnimIn.tools(animations, easingKey, follower, timing)
 	local tools = {}
 	local useDefaultHandles = easingKey == nil or easingKey == "setting"
-	local maskedBlur = usesWordMaskedBlur(animations, follower)
 	local inStartFrame = timing and timing.inStartFrame or 0
 	local inEndFrame = timing and timing.inEndFrame or 10
 
-	if AnimIn.anySlideEnabled(animations) or maskedBlur then
+	if AnimIn.anySlideEnabled(animations) then
 		local pathKeyframes = [[
 						[]] .. inStartFrame .. [[] = { 0, RH = { ]] .. scaledFrameText(timing, 0.226666666666667) .. [[, 0.0248989898989897 }, Flags = { LockedY = true } },
 						[]] .. inEndFrame .. [[] = { 1, LH = { ]] .. scaledFrameText(timing, 2.04) .. [[, 1 }, Flags = { LockedY = true } }]]
@@ -286,7 +268,7 @@ function AnimIn.tools(animations, easingKey, follower, timing)
 				},]])
 	end
 
-	if animations.fade and not maskedBlur then
+	if animations.fade then
 		local opacityKeyframes = [[
 						[]] .. inStartFrame .. [[] = { 0, RH = { 0, 0.00133333333333333 }, Flags = { Linear = true } },
 						[]] .. inEndFrame .. [[] = { 1, LH = { ]] .. scaledFrameText(timing, 2.06) .. [[, 1 } }]]
@@ -305,7 +287,7 @@ function AnimIn.tools(animations, easingKey, follower, timing)
 				},]])
 	end
 
-	if animations.blur and not maskedBlur then
+	if animations.blur then
 		local blurKeyframes = [[
 						[]] .. inStartFrame .. [[] = { 5, RH = { ]] .. scaledFrameText(timing, 0.74) .. [[, 4.48 }, Flags = { Linear = true } },
 						[]] .. inEndFrame .. [[] = { 0, LH = { ]] .. scaledFrameText(timing, 2.2) .. [[, 0 } }]]
@@ -331,93 +313,10 @@ function AnimIn.tools(animations, easingKey, follower, timing)
 				},]])
 	end
 
-	if maskedBlur then
-		table.insert(tools, [[
-				Follower1Opacity5 = BezierSpline {
-					SplineColor = { Red = 179, Green = 28, Blue = 244 },
-					CtrlWZoom = false,
-					NameSet = true,
-					KeyFrames = {
-						[]] .. inStartFrame .. [[] = { 0, RH = { 0, 0 }, Flags = { Linear = true } },
-						[]] .. inEndFrame .. [[] = { 1, LH = { ]] .. scaledFrameText(timing, 2.04155844155844) .. [[, 1 } }
-					}
-				},]])
-	end
-
 	return table.concat(tools, "\n")
 end
 
 function AnimIn.blurTool(animations, follower, timing)
-	local maskedBlur = usesWordMaskedBlur(animations, follower)
-	local inStartFrame = timing and timing.inStartFrame or 0
-	local inEndFrame = timing and timing.inEndFrame or 10
-
-	if not animations.blur and not maskedBlur then
-		return ""
-	end
-
-	if maskedBlur then
-		local blurNode = ""
-
-		if animations.blur then
-			blurNode = [[
-				Blur1 = Blur {
-					Inputs = {
-						EffectMask = Input {
-							SourceOp = "BlurMaskText",
-							Source = "Output",
-						},
-						ApplyMaskInverted = Input { Value = 1, },
-						MaskLow = Input {
-							SourceOp = "Blur1Low",
-							Source = "Value",
-						},
-						MaskHigh = Input {
-							SourceOp = "Blur1High",
-							Source = "Value",
-						},
-						Filter = Input { Value = FuID { "Fast Gaussian" }, },
-						XBlurSize = Input { Value = 6.5, },
-						Input = Input {
-							SourceOp = "TextMain",
-							Source = "Output",
-						}
-					},
-					ViewInfo = OperatorInfo { Pos = { 330, 115.5 } },
-				},
-				Blur1Low = BezierSpline {
-					SplineColor = { Red = 231, Green = 243, Blue = 234 },
-					NameSet = true,
-					KeyFrames = {
-						[]] .. inStartFrame .. [[] = { 1, RH = { ]] .. scaledFrameText(timing, 3.4) .. [[, 1 } },
-						[]] .. inEndFrame .. [[] = { 0, LH = { ]] .. scaledFrameText(timing, 2.6) .. [[, 0 } }
-					}
-				},
-				Blur1High = BezierSpline {
-					SplineColor = { Red = 231, Green = 190, Blue = 243 },
-					CtrlWZoom = false,
-					NameSet = true,
-					KeyFrames = {
-						[]] .. inStartFrame .. [[] = { 1, RH = { ]] .. scaledFrameText(timing, 3.33333333333333) .. [[, 1 }, Flags = { Linear = true } },
-						[]] .. inEndFrame .. [[] = { 1, LH = { ]] .. scaledFrameText(timing, 6.66666666666667) .. [[, 1 }, Flags = { Linear = true } }
-					}
-				},]]
-		end
-
-		return [[
-				BlurMaskText = TextPlus {
-					CtrlWZoom = false,
-					SourceOp = "TextMain",
-					Inputs = {
-						Enabled1 = Input { Value = 0, },
-						Enabled5 = Input { Value = 1, },
-						ExtendHorizontal5 = Input { Value = -0.151, },
-						Softness5 = Input { Value = 1, },
-					},
-					ViewInfo = OperatorInfo { Pos = { 330, 42.5 } },
-				},]] .. blurNode
-	end
-
 	return ""
 end
 

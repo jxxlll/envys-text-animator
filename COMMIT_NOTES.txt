@@ -1,7 +1,7 @@
 If pushing manually, run these commands from this folder:
 
 git add .
-git commit -m "Release beta 0.0.4 word engine upgrade"
+git commit -m "Release beta 0.0.4a WBW stabilization"
 git push origin main
 
 Suggested repository name:

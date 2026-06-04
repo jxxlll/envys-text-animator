@@ -20,7 +20,6 @@ function Generator.buildComp(textValue, state, asTitle)
 	local globalOut = Config.globalOutFrame(state.timelineFps, state.durationSeconds, animationSeconds)
 	local timing = Config.animationTiming(state.timelineFps, animationSeconds)
 	local hasAnimationOut = AnimOut.hasAny(animationsOut)
-	local usesWordMaskedBlur = false
 	local wordDelayValue = follower.wordDelay or 6
 	local followerDelayInputSourceOp = follower.wordByWord and "TextMain" or "Follower1"
 	local followerDelayInputSource = follower.wordByWord and "DelayWBW" or "Delay"
@@ -55,13 +54,13 @@ function Generator.buildComp(textValue, state, asTitle)
 						}
 					}]]
 	end
-	local followerInputs = AnimIn.followerInputs(animations, follower, usesWordMaskedBlur)
+	local followerInputs = AnimIn.followerInputs(animations, follower)
 	local animationTools = AnimIn.tools(animations, easingIn, follower, timing)
 	local blurTool = AnimIn.blurTool(animations, follower, timing)
 	local outSource = AnimIn.outputSource(animations, follower)
 
 	if hasAnimationOut then
-		followerInputs = AnimOut.combinedFollowerInputs(animations, animationsOut, follower, usesWordMaskedBlur)
+		followerInputs = AnimOut.combinedFollowerInputs(animations, animationsOut, follower)
 		animationTools = AnimOut.combinedTools(animations, animationsOut, nil, nil, easingIn, easingOut, follower, timing)
 		blurTool = AnimOut.combinedBlurTool(animations, animationsOut, follower, timing)
 		outSource = AnimOut.combinedOutputSource(animations, animationsOut, follower)
